@@ -4,19 +4,320 @@
     <meta charset="UTF-8">
     <title>ARTIX — персональный ИИ</title>
     <style>
+        * { box-sizing: border-box; }
         body {
-            background: #0d0d0d;
-            color: #fff;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding-top: 10%;
+            background: #050509;
+            color: #f5f5f5;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
-        h1 { font-size: 48px; }
-        p { font-size: 20px; opacity: 0.8; }
+
+        .app {
+            width: 100%;
+            max-width: 600px;
+            background: radial-gradient(circle at top, #141428, #050509);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.7);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .title {
+            text-align: center;
+            margin-bottom: 6px;
+            font-size: 28px;
+            letter-spacing: 0.08em;
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: 13px;
+            opacity: 0.7;
+        }
+
+        .chat {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 10px;
+            height: 260px;
+            overflow-y: auto;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .msg {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .msg-user {
+            text-align: right;
+        }
+
+        .msg-user span {
+            background: rgba(88, 166, 255, 0.18);
+            padding: 6px 10px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .msg-bot span {
+            background: rgba(120, 255, 180, 0.12);
+            padding: 6px 10px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+            outline: none;
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+
+        button {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: none;
+            background: #4f46e5;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s ease;
+        }
+
+        button:hover {
+            background: #6366f1;
+            box-shadow: 0 0 12px rgba(99,102,241,0.6);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        .note {
+            margin-top: 10px;
+            font-size: 11px;
+            opacity: 0.6;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h1>ARTIX</h1>
-    <p>Персональный ИИ Артёма. Скоро здесь будет умный ассистент.</p>
+<div class="app">
+    <div class="title">ARTIX</div>
+    <div class="subtitle">минимальный ИИ в браузере (без внешних сервисов)</div>
+
+    <div id="chat" class="chat"></div>
+
+    <div class="input-row">
+        <input
+            id="userInput"
+            type="text"
+            placeholder="Напиши: привет, как дела, кто ты..."
+        >
+        <button id="sendBtn">Отправить</button>
+    </div>
+
+    <div class="note">
+        ARTIX использует очень простую нейросеть, которая обучается прямо в твоём браузере.
+    </div>
+</div>
+
+<script>
+    // --- Примитивный "словарь" признаков ---
+    const keywords = [
+        "привет",
+        "здравств",
+        "как",
+        "дела",
+        "кто",
+        "что",
+        "ты"
+    ];
+
+    // 0 — приветствие, 1 — вопрос "как дела", 2 — вопрос "кто ты"
+    const responses = [
+        "Привет! Я ARTIX — экспериментальный ИИ, которого написал Артём.",
+        "У меня всё отлично, я живу прямо в этом сайте и отвечаю на сообщения.",
+        "Я ARTIX — маленькая нейросеть в браузере. Всё, что я умею, запрограммировано и обучено здесь."
+    ];
+
+    // --- Вспомогательные функции для работы с векторами/матрицами ---
+    function zeros(n, m) {
+        const arr = [];
+        for (let i = 0; i < n; i++) {
+            arr.push(new Array(m).fill(0));
+        }
+        return arr;
+    }
+
+    function randomMatrix(n, m) {
+        const arr = [];
+        for (let i = 0; i < n; i++) {
+            const row = [];
+            for (let j = 0; j < m; j++) {
+                row.push((Math.random() - 0.5) * 0.4); // маленькие случайные веса
+            }
+            arr.push(row);
+        }
+        return arr;
+    }
+
+    function softmax(logits) {
+        const max = Math.max(...logits);
+        const exps = logits.map(v => Math.exp(v - max));
+        const sum = exps.reduce((a, b) => a + b, 0);
+        return exps.map(v => v / sum);
+    }
+
+    // --- Превращаем текст в вектор признаков ---
+    function textToVector(text) {
+        const t = text.toLowerCase();
+        const vec = new Array(keywords.length).fill(0);
+        keywords.forEach((kw, i) => {
+            if (t.includes(kw)) vec[i] = 1;
+        });
+        return vec;
+    }
+
+    // --- Минимальная нейросеть: логистическая регрессия (softmax) ---
+    const inputSize = keywords.length;
+    const outputSize = 3; // 3 класса
+
+    let W = randomMatrix(outputSize, inputSize); // веса
+    let b = new Array(outputSize).fill(0);       // смещения
+
+    function forward(x) {
+        const logits = new Array(outputSize).fill(0);
+        for (let i = 0; i < outputSize; i++) {
+            let s = b[i];
+            for (let j = 0; j < inputSize; j++) {
+                s += W[i][j] * x[j];
+            }
+            logits[i] = s;
+        }
+        return softmax(logits);
+    }
+
+    // Обучающие примеры
+    const trainingData = [
+        { text: "привет", label: 0 },
+        { text: "здравствуй", label: 0 },
+        { text: "хай привет", label: 0 },
+
+        { text: "как дела", label: 1 },
+        { text: "как ты", label: 1 },
+        { text: "как у тебя дела", label: 1 },
+
+        { text: "кто ты", label: 2 },
+        { text: "что ты такое", label: 2 },
+        { text: "кто ты такой", label: 2 }
+    ];
+
+    function train(epochs = 800, lr = 0.2) {
+        for (let epoch = 0; epoch < epochs; epoch++) {
+            for (const sample of trainingData) {
+                const x = textToVector(sample.text);
+                const yTrue = new Array(outputSize).fill(0);
+                yTrue[sample.label] = 1;
+
+                const yPred = forward(x); // softmax
+
+                // Градиентный спуск: dL/dW = (yPred - yTrue) * x
+                for (let i = 0; i < outputSize; i++) {
+                    const error = yPred[i] - yTrue[i];
+                    for (let j = 0; j < inputSize; j++) {
+                        W[i][j] -= lr * error * x[j];
+                    }
+                    b[i] -= lr * error;
+                }
+            }
+        }
+    }
+
+    // Обучаем сеть при загрузке страницы
+    train();
+
+    function predictClass(text) {
+        const x = textToVector(text);
+        const probs = forward(x);
+        let bestIdx = 0;
+        let bestProb = probs[0];
+
+        for (let i = 1; i < probs.length; i++) {
+            if (probs[i] > bestProb) {
+                bestProb = probs[i];
+                bestIdx = i;
+            }
+        }
+
+        return { index: bestIdx, prob: bestProb };
+    }
+
+    // --- Простая логика чата ---
+    const chatEl = document.getElementById("chat");
+    const inputEl = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function addMessage(text, from) {
+        const div = document.createElement("div");
+        div.className = "msg " + (from === "user" ? "msg-user" : "msg-bot");
+
+        const span = document.createElement("span");
+        span.textContent = text;
+
+        div.appendChild(span);
+        chatEl.appendChild(div);
+        chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    function handleSend() {
+        const text = inputEl.value.trim();
+        if (!text) return;
+
+        addMessage(text, "user");
+        inputEl.value = "";
+
+        const { index, prob } = predictClass(text);
+
+        let reply;
+        if (prob < 0.45) {
+            reply = "Я пока плохо понимаю такие вопросы. Попробуй спросить что-то вроде: «привет», «как дела» или «кто ты».";
+        } else {
+            reply = responses[index];
+        }
+
+        // Небольшая задержка для эффекта
+        setTimeout(() => addMessage(reply, "bot"), 200);
+    }
+
+    sendBtn.addEventListener("click", handleSend);
+    inputEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") handleSend();
+    });
+
+    // Приветственное сообщение
+    addMessage("Привет! Я ARTIX. Напиши мне: «привет», «как дела» или «кто ты».", "bot");
+</script>
 </body>
 </html>
