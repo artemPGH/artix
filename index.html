@@ -18,7 +18,7 @@
 
         .app {
             width: 100%;
-            max-width: 600px;
+            max-width: 650px;
             background: radial-gradient(circle at top, #141428, #050509);
             border-radius: 16px;
             padding: 20px;
@@ -44,7 +44,7 @@
             background: rgba(0,0,0,0.3);
             border-radius: 10px;
             padding: 10px;
-            height: 260px;
+            height: 230px;
             overflow-y: auto;
             font-size: 14px;
             margin-bottom: 12px;
@@ -76,6 +76,7 @@
         .input-row {
             display: flex;
             gap: 8px;
+            margin-bottom: 10px;
         }
 
         input[type="text"] {
@@ -115,17 +116,82 @@
         }
 
         .note {
-            margin-top: 10px;
+            margin-top: 4px;
             font-size: 11px;
             opacity: 0.6;
             text-align: center;
+        }
+
+        .teach {
+            margin-top: 8px;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.03);
+            border: 1px dashed rgba(255,255,255,0.15);
+            font-size: 12px;
+        }
+
+        .teach-title {
+            margin-bottom: 6px;
+            opacity: 0.8;
+        }
+
+        .teach textarea {
+            width: 100%;
+            min-height: 50px;
+            resize: vertical;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+            padding: 6px 8px;
+            font-family: inherit;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .teach-buttons {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+
+        .teach.hidden {
+            display: none;
+        }
+
+        .export {
+            margin-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 8px;
+        }
+
+        .export-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            opacity: 0.7;
+            margin-bottom: 4px;
+        }
+
+        .export textarea {
+            width: 100%;
+            min-height: 70px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            padding: 6px 8px;
+            font-family: "JetBrains Mono", monospace;
+            font-size: 11px;
         }
     </style>
 </head>
 <body>
 <div class="app">
     <div class="title">ARTIX</div>
-    <div class="subtitle">минимальный ИИ в браузере (без внешних сервисов)</div>
+    <div class="subtitle">минимальный ИИ в браузере (без чужих нейросетей)</div>
 
     <div id="chat" class="chat"></div>
 
@@ -133,18 +199,40 @@
         <input
             id="userInput"
             type="text"
-            placeholder="Напиши: привет, как дела, кто ты..."
+            placeholder="Задай любой вопрос..."
         >
         <button id="sendBtn">Отправить</button>
     </div>
 
+    <!-- Блок обучения от пользователя -->
+    <div id="teachBox" class="teach hidden">
+        <div class="teach-title">
+            Я не знаю, как ответить. Напиши правильный ответ — я запомню.
+        </div>
+        <textarea id="teachAnswer" placeholder="Напиши здесь правильный ответ..."></textarea>
+        <div class="teach-buttons">
+            <button id="teachCancelBtn" type="button">Отмена</button>
+            <button id="teachSaveBtn" type="button">Сохранить ответ</button>
+        </div>
+    </div>
+
+    <!-- Экспорт знаний -->
+    <div class="export">
+        <div class="export-header">
+            <span>Экспорт базы знаний (локальное обучение)</span>
+            <button id="exportBtn" type="button">Сгенерировать JSON</button>
+        </div>
+        <textarea id="exportArea" readonly placeholder='Здесь появится JSON со знаниями ARTIX...'></textarea>
+    </div>
+
     <div class="note">
-        ARTIX использует очень простую нейросеть, которая обучается прямо в твоём браузере.
+        ARTIX запоминает ответы в твоём браузере (localStorage). JSON можно сохранить в репозиторий.
     </div>
 </div>
 
 <script>
-    // --- Примитивный "словарь" признаков ---
+    // ===== 1. Простая "нейросеть" для интентов (как раньше) =====
+
     const keywords = [
         "привет",
         "здравств",
@@ -155,19 +243,15 @@
         "ты"
     ];
 
-    // 0 — приветствие, 1 — вопрос "как дела", 2 — вопрос "кто ты"
-    const responses = [
+    const intentResponses = [
         "Привет! Я ARTIX — экспериментальный ИИ, которого написал Артём.",
         "У меня всё отлично, я живу прямо в этом сайте и отвечаю на сообщения.",
         "Я ARTIX — маленькая нейросеть в браузере. Всё, что я умею, запрограммировано и обучено здесь."
     ];
 
-    // --- Вспомогательные функции для работы с векторами/матрицами ---
     function zeros(n, m) {
         const arr = [];
-        for (let i = 0; i < n; i++) {
-            arr.push(new Array(m).fill(0));
-        }
+        for (let i = 0; i < n; i++) arr.push(new Array(m).fill(0));
         return arr;
     }
 
@@ -176,7 +260,7 @@
         for (let i = 0; i < n; i++) {
             const row = [];
             for (let j = 0; j < m; j++) {
-                row.push((Math.random() - 0.5) * 0.4); // маленькие случайные веса
+                row.push((Math.random() - 0.5) * 0.4);
             }
             arr.push(row);
         }
@@ -190,7 +274,6 @@
         return exps.map(v => v / sum);
     }
 
-    // --- Превращаем текст в вектор признаков ---
     function textToVector(text) {
         const t = text.toLowerCase();
         const vec = new Array(keywords.length).fill(0);
@@ -200,26 +283,22 @@
         return vec;
     }
 
-    // --- Минимальная нейросеть: логистическая регрессия (softmax) ---
     const inputSize = keywords.length;
-    const outputSize = 3; // 3 класса
+    const outputSize = 3;
 
-    let W = randomMatrix(outputSize, inputSize); // веса
-    let b = new Array(outputSize).fill(0);       // смещения
+    let W = randomMatrix(outputSize, inputSize);
+    let b = new Array(outputSize).fill(0);
 
     function forward(x) {
         const logits = new Array(outputSize).fill(0);
         for (let i = 0; i < outputSize; i++) {
             let s = b[i];
-            for (let j = 0; j < inputSize; j++) {
-                s += W[i][j] * x[j];
-            }
+            for (let j = 0; j < inputSize; j++) s += W[i][j] * x[j];
             logits[i] = s;
         }
         return softmax(logits);
     }
 
-    // Обучающие примеры
     const trainingData = [
         { text: "привет", label: 0 },
         { text: "здравствуй", label: 0 },
@@ -241,9 +320,8 @@
                 const yTrue = new Array(outputSize).fill(0);
                 yTrue[sample.label] = 1;
 
-                const yPred = forward(x); // softmax
+                const yPred = forward(x);
 
-                // Градиентный спуск: dL/dW = (yPred - yTrue) * x
                 for (let i = 0; i < outputSize; i++) {
                     const error = yPred[i] - yTrue[i];
                     for (let j = 0; j < inputSize; j++) {
@@ -255,29 +333,104 @@
         }
     }
 
-    // Обучаем сеть при загрузке страницы
     train();
 
-    function predictClass(text) {
+    function predictIntent(text) {
         const x = textToVector(text);
         const probs = forward(x);
         let bestIdx = 0;
         let bestProb = probs[0];
-
         for (let i = 1; i < probs.length; i++) {
             if (probs[i] > bestProb) {
                 bestProb = probs[i];
                 bestIdx = i;
             }
         }
-
         return { index: bestIdx, prob: bestProb };
     }
 
-    // --- Простая логика чата ---
+    // ===== 2. База знаний: built-in + обучение от пользователя =====
+
+    const builtinKnowledge = [
+        {
+            q: "что такое artix",
+            a: "ARTIX — персональный ИИ Артёма. Это экспериментальный проект, который полностью работает в браузере и постепенно учится новым ответам."
+        },
+        {
+            q: "кто создал artix",
+            a: "ARTIX создал Артём. Он решил собрать собственный ИИ без подключения чужих нейросетей."
+        }
+    ];
+
+    const KNOWLEDGE_KEY = "artix_knowledge_v1";
+
+    function loadUserKnowledge() {
+        try {
+            const raw = localStorage.getItem(KNOWLEDGE_KEY);
+            if (!raw) return [];
+            const data = JSON.parse(raw);
+            if (!Array.isArray(data)) return [];
+            return data.filter(item => typeof item.q === "string" && typeof item.a === "string");
+        } catch (e) {
+            return [];
+        }
+    }
+
+    let userKnowledge = loadUserKnowledge();
+
+    function saveUserKnowledge() {
+        try {
+            localStorage.setItem(KNOWLEDGE_KEY, JSON.stringify(userKnowledge));
+        } catch (e) {
+            // игнорируем ошибки localStorage
+        }
+    }
+
+    function tokenize(text) {
+        return text
+            .toLowerCase()
+            .split(/[^a-zA-Zа-яА-Я0-9]+/u)
+            .filter(Boolean);
+    }
+
+    function similarity(q1, q2) {
+        const w1 = new Set(tokenize(q1));
+        const w2 = new Set(tokenize(q2));
+        if (!w1.size || !w2.size) return 0;
+        let inter = 0;
+        w1.forEach(w => { if (w2.has(w)) inter++; });
+        return inter / Math.max(w1.size, w2.size);
+    }
+
+    function findBestAnswer(question) {
+        const all = [...builtinKnowledge, ...userKnowledge];
+        let best = null;
+        let bestScore = 0;
+        for (const item of all) {
+            const s = similarity(question, item.q);
+            if (s > bestScore) {
+                bestScore = s;
+                best = item;
+            }
+        }
+        return { answer: best ? best.a : null, score: bestScore };
+    }
+
+    // ===== 3. Чат и обучение от пользователя =====
+
     const chatEl = document.getElementById("chat");
     const inputEl = document.getElementById("userInput");
     const sendBtn = document.getElementById("sendBtn");
+
+    const teachBox = document.getElementById("teachBox");
+    const teachAnswerEl = document.getElementById("teachAnswer");
+    const teachSaveBtn = document.getElementById("teachSaveBtn");
+    const teachCancelBtn = document.getElementById("teachCancelBtn");
+
+    const exportBtn = document.getElementById("exportBtn");
+    const exportArea = document.getElementById("exportArea");
+
+    let pendingTeachQuestion = null;
 
     function addMessage(text, from) {
         const div = document.createElement("div");
@@ -291,6 +444,13 @@
         chatEl.scrollTop = chatEl.scrollHeight;
     }
 
+    function askUserToTeach(question) {
+        pendingTeachQuestion = question;
+        teachBox.classList.remove("hidden");
+        teachAnswerEl.value = "";
+        teachAnswerEl.focus();
+    }
+
     function handleSend() {
         const text = inputEl.value.trim();
         if (!text) return;
@@ -298,17 +458,27 @@
         addMessage(text, "user");
         inputEl.value = "";
 
-        const { index, prob } = predictClass(text);
+        // 1. Пытаемся распознать интент (привет/как дела/кто ты)
+        const { index, prob } = predictIntent(text);
 
-        let reply;
-        if (prob < 0.45) {
-            reply = "Я пока плохо понимаю такие вопросы. Попробуй спросить что-то вроде: «привет», «как дела» или «кто ты».";
-        } else {
-            reply = responses[index];
+        if (prob >= 0.7) {
+            const reply = intentResponses[index];
+            setTimeout(() => addMessage(reply, "bot"), 200);
+            return;
         }
 
-        // Небольшая задержка для эффекта
+        // 2. Пытаемся найти ответ в базе знаний
+        const { answer, score } = findBestAnswer(text);
+
+        if (answer && score >= 0.35) {
+            setTimeout(() => addMessage(answer, "bot"), 200);
+            return;
+        }
+
+        // 3. Не знаем — просим научить
+        const reply = "Я пока не знаю ответ на этот вопрос. Можешь подсказать, что отвечать в таких случаях?";
         setTimeout(() => addMessage(reply, "bot"), 200);
+        askUserToTeach(text);
     }
 
     sendBtn.addEventListener("click", handleSend);
@@ -316,8 +486,35 @@
         if (e.key === "Enter") handleSend();
     });
 
+    teachSaveBtn.addEventListener("click", () => {
+        const a = teachAnswerEl.value.trim();
+        if (!a || !pendingTeachQuestion) return;
+
+        userKnowledge.push({ q: pendingTeachQuestion, a });
+        saveUserKnowledge();
+
+        addMessage("Запомнил этот ответ, спасибо!", "bot");
+        addMessage(a, "bot");
+
+        pendingTeachQuestion = null;
+        teachBox.classList.add("hidden");
+    });
+
+    teachCancelBtn.addEventListener("click", () => {
+        pendingTeachQuestion = null;
+        teachBox.classList.add("hidden");
+    });
+
+    exportBtn.addEventListener("click", () => {
+        const data = {
+            version: 1,
+            knowledge: userKnowledge
+        };
+        exportArea.value = JSON.stringify(data, null, 2);
+    });
+
     // Приветственное сообщение
-    addMessage("Привет! Я ARTIX. Напиши мне: «привет», «как дела» или «кто ты».", "bot");
+    addMessage("Привет! Я ARTIX. Задавай вопросы. Если я не знаю ответ — ты можешь меня научить.", "bot");
 </script>
 </body>
 </html>
