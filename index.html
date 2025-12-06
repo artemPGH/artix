@@ -2,11 +2,12 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ARTIX — персональный ИИ</title>
+    <title>ARTIX — помощник</title>
     <style>
         * { box-sizing: border-box; }
+
         body {
-            background: #050509;
+            background: radial-gradient(circle at top, #050716, #020308 60%, #000000);
             color: #f5f5f5;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             margin: 0;
@@ -14,40 +15,75 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            padding: 16px;
         }
 
         .app {
             width: 100%;
-            max-width: 650px;
-            background: radial-gradient(circle at top, #141428, #050509);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 0 40px rgba(0,0,0,0.7);
-            border: 1px solid rgba(255,255,255,0.06);
+            max-width: 760px;
+            background: rgba(8, 10, 26, 0.96);
+            border-radius: 20px;
+            padding: 22px 22px 16px;
+            box-shadow:
+                0 0 40px rgba(0, 0, 0, 0.8),
+                0 0 80px rgba(88, 166, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 12px;
+            gap: 12px;
         }
 
         .title {
-            text-align: center;
-            margin-bottom: 6px;
-            font-size: 28px;
-            letter-spacing: 0.08em;
+            font-size: 26px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
         }
 
         .subtitle {
-            text-align: center;
-            margin-bottom: 16px;
-            font-size: 13px;
+            font-size: 12px;
             opacity: 0.7;
         }
 
+        .mode-switch {
+            display: inline-flex;
+            padding: 3px;
+            border-radius: 999px;
+            background: rgba(15,23,42,0.85);
+            border: 1px solid rgba(148,163,184,0.4);
+        }
+
+        .mode-btn {
+            border: none;
+            background: transparent;
+            color: #cbd5f5;
+            font-size: 11px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+            opacity: 0.85;
+        }
+
+        .mode-btn.active {
+            background: radial-gradient(circle at top, #4f46e5, #312e81);
+            color: #f9fafb;
+            opacity: 1;
+            box-shadow: 0 0 12px rgba(129, 140, 248, 0.6);
+        }
+
         .chat {
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
-            padding: 10px;
-            height: 230px;
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 12px;
+            padding: 10px 10px;
+            height: 290px;
             overflow-y: auto;
             font-size: 14px;
             margin-bottom: 12px;
+            border: 1px solid rgba(30,64,175,0.5);
         }
 
         .msg {
@@ -60,138 +96,132 @@
         }
 
         .msg-user span {
-            background: rgba(88, 166, 255, 0.18);
-            padding: 6px 10px;
-            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(59,130,246,0.35), rgba(8,47,73,0.9));
+            padding: 7px 11px;
+            border-radius: 12px;
             display: inline-block;
+            max-width: 85%;
         }
 
         .msg-bot span {
-            background: rgba(120, 255, 180, 0.12);
-            padding: 6px 10px;
-            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(16,185,129,0.24), rgba(15,23,42,0.95));
+            padding: 7px 11px;
+            border-radius: 12px;
             display: inline-block;
+            max-width: 100%;
+        }
+
+        .msg-bot code {
+            font-family: "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 12px;
+        }
+
+        pre {
+            margin: 6px 0 2px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: rgba(15,23,42,0.9);
+            border: 1px solid rgba(55,65,81,0.8);
+            overflow-x: auto;
         }
 
         .input-row {
             display: flex;
             gap: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         input[type="text"] {
             flex: 1;
-            padding: 8px 10px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(0,0,0,0.5);
-            color: #fff;
+            padding: 9px 11px;
+            border-radius: 10px;
+            border: 1px solid rgba(148,163,184,0.7);
+            background: rgba(15,23,42,0.95);
+            color: #e5e7eb;
             outline: none;
+            font-size: 14px;
         }
 
         input[type="text"]::placeholder {
-            color: rgba(255,255,255,0.4);
+            color: rgba(148,163,184,0.7);
         }
 
-        button {
-            padding: 8px 14px;
-            border-radius: 8px;
+        button.send-btn {
+            padding: 9px 14px;
+            border-radius: 10px;
             border: none;
-            background: #4f46e5;
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
             color: #fff;
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s ease;
+            font-size: 14px;
+            white-space: nowrap;
         }
 
-        button:hover {
-            background: #6366f1;
-            box-shadow: 0 0 12px rgba(99,102,241,0.6);
+        button.send-btn:hover {
+            box-shadow: 0 0 14px rgba(59,130,246,0.75);
             transform: translateY(-1px);
         }
 
-        button:active {
+        button.send-btn:active {
             transform: translateY(0);
             box-shadow: none;
         }
 
-        .note {
-            margin-top: 4px;
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
             font-size: 11px;
-            opacity: 0.6;
-            text-align: center;
+            opacity: 0.7;
+            margin-top: 4px;
+            flex-wrap: wrap;
         }
 
-        .teach {
-            margin-top: 8px;
-            padding: 8px;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.03);
-            border: 1px dashed rgba(255,255,255,0.15);
-            font-size: 12px;
+        .hint-label {
+            opacity: 0.85;
         }
 
-        .teach-title {
-            margin-bottom: 6px;
+        .hints {
             opacity: 0.8;
         }
 
-        .teach textarea {
-            width: 100%;
-            min-height: 50px;
-            resize: vertical;
-            border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(0,0,0,0.5);
-            color: #fff;
-            padding: 6px 8px;
-            font-family: inherit;
-            font-size: 12px;
-            margin-bottom: 6px;
+        .hints span {
+            background: rgba(15,23,42,0.95);
+            border-radius: 999px;
+            padding: 3px 8px;
+            border: 1px solid rgba(148,163,184,0.6);
+            margin-right: 4px;
+            margin-bottom: 2px;
+            display: inline-block;
         }
 
-        .teach-buttons {
-            display: flex;
-            gap: 6px;
-            justify-content: flex-end;
-        }
-
-        .teach.hidden {
-            display: none;
-        }
-
-        .export {
-            margin-top: 10px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 8px;
-        }
-
-        .export-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 11px;
-            opacity: 0.7;
-            margin-bottom: 4px;
-        }
-
-        .export textarea {
-            width: 100%;
-            min-height: 70px;
-            border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(0,0,0,0.6);
-            color: #fff;
-            padding: 6px 8px;
-            font-family: "JetBrains Mono", monospace;
-            font-size: 11px;
+        @media (max-width: 600px) {
+            .app {
+                padding: 14px 12px 12px;
+            }
+            .chat {
+                height: 260px;
+            }
+            .title {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
 <body>
 <div class="app">
-    <div class="title">ARTIX</div>
-    <div class="subtitle">минимальный ИИ в браузере (без чужих нейросетей)</div>
+    <div class="header">
+        <div>
+            <div class="title">ARTIX</div>
+            <div class="subtitle">простая обучающая среда и помощник по Python</div>
+        </div>
+        <div class="mode-switch">
+            <button class="mode-btn active" data-mode="general">Обычный режим</button>
+            <button class="mode-btn" data-mode="python">Python режим</button>
+        </div>
+    </div>
 
     <div id="chat" class="chat"></div>
 
@@ -199,256 +229,444 @@
         <input
             id="userInput"
             type="text"
-            placeholder="Задай любой вопрос..."
+            placeholder="Задай вопрос, например: что такое переменная?"
         >
-        <button id="sendBtn">Отправить</button>
+        <button id="sendBtn" class="send-btn">Отправить</button>
     </div>
 
-    <!-- Блок обучения от пользователя -->
-    <div id="teachBox" class="teach hidden">
-        <div class="teach-title">
-            Я не знаю, как ответить. Напиши правильный ответ — я запомню.
+    <div class="footer">
+        <div>
+            <span class="hint-label">Режимы:</span>
+            <span>обычный — базовые вопросы,</span>
+            <span>Python — примеры кода и подсказки.</span>
         </div>
-        <textarea id="teachAnswer" placeholder="Напиши здесь правильный ответ..."></textarea>
-        <div class="teach-buttons">
-            <button id="teachCancelBtn" type="button">Отмена</button>
-            <button id="teachSaveBtn" type="button">Сохранить ответ</button>
+        <div class="hints" id="hints">
+            <span>что такое python</span>
+            <span>как сделать цикл for в python</span>
         </div>
-    </div>
-
-    <!-- Экспорт знаний -->
-    <div class="export">
-        <div class="export-header">
-            <span>Экспорт базы знаний (локальное обучение)</span>
-            <button id="exportBtn" type="button">Сгенерировать JSON</button>
-        </div>
-        <textarea id="exportArea" readonly placeholder='Здесь появится JSON со знаниями ARTIX...'></textarea>
-    </div>
-
-    <div class="note">
-        ARTIX запоминает ответы в твоём браузере (localStorage). JSON можно сохранить в репозиторий.
     </div>
 </div>
 
 <script>
-    // ===== 1. Простая "нейросеть" для интентов (как раньше) =====
-
-    const keywords = [
-        "привет",
-        "здравств",
-        "как",
-        "дела",
-        "кто",
-        "что",
-        "ты"
-    ];
-
-    const intentResponses = [
-        "Привет! Я ARTIX — экспериментальный ИИ, которого написал Артём.",
-        "У меня всё отлично, я живу прямо в этом сайте и отвечаю на сообщения.",
-        "Я ARTIX — маленькая нейросеть в браузере. Всё, что я умею, запрограммировано и обучено здесь."
-    ];
-
-    function zeros(n, m) {
-        const arr = [];
-        for (let i = 0; i < n; i++) arr.push(new Array(m).fill(0));
-        return arr;
-    }
-
-    function randomMatrix(n, m) {
-        const arr = [];
-        for (let i = 0; i < n; i++) {
-            const row = [];
-            for (let j = 0; j < m; j++) {
-                row.push((Math.random() - 0.5) * 0.4);
-            }
-            arr.push(row);
-        }
-        return arr;
-    }
-
-    function softmax(logits) {
-        const max = Math.max(...logits);
-        const exps = logits.map(v => Math.exp(v - max));
-        const sum = exps.reduce((a, b) => a + b, 0);
-        return exps.map(v => v / sum);
-    }
-
-    function textToVector(text) {
-        const t = text.toLowerCase();
-        const vec = new Array(keywords.length).fill(0);
-        keywords.forEach((kw, i) => {
-            if (t.includes(kw)) vec[i] = 1;
-        });
-        return vec;
-    }
-
-    const inputSize = keywords.length;
-    const outputSize = 3;
-
-    let W = randomMatrix(outputSize, inputSize);
-    let b = new Array(outputSize).fill(0);
-
-    function forward(x) {
-        const logits = new Array(outputSize).fill(0);
-        for (let i = 0; i < outputSize; i++) {
-            let s = b[i];
-            for (let j = 0; j < inputSize; j++) s += W[i][j] * x[j];
-            logits[i] = s;
-        }
-        return softmax(logits);
-    }
-
-    const trainingData = [
-        { text: "привет", label: 0 },
-        { text: "здравствуй", label: 0 },
-        { text: "хай привет", label: 0 },
-
-        { text: "как дела", label: 1 },
-        { text: "как ты", label: 1 },
-        { text: "как у тебя дела", label: 1 },
-
-        { text: "кто ты", label: 2 },
-        { text: "что ты такое", label: 2 },
-        { text: "кто ты такой", label: 2 }
-    ];
-
-    function train(epochs = 800, lr = 0.2) {
-        for (let epoch = 0; epoch < epochs; epoch++) {
-            for (const sample of trainingData) {
-                const x = textToVector(sample.text);
-                const yTrue = new Array(outputSize).fill(0);
-                yTrue[sample.label] = 1;
-
-                const yPred = forward(x);
-
-                for (let i = 0; i < outputSize; i++) {
-                    const error = yPred[i] - yTrue[i];
-                    for (let j = 0; j < inputSize; j++) {
-                        W[i][j] -= lr * error * x[j];
-                    }
-                    b[i] -= lr * error;
-                }
-            }
-        }
-    }
-
-    train();
-
-    function predictIntent(text) {
-        const x = textToVector(text);
-        const probs = forward(x);
-        let bestIdx = 0;
-        let bestProb = probs[0];
-        for (let i = 1; i < probs.length; i++) {
-            if (probs[i] > bestProb) {
-                bestProb = probs[i];
-                bestIdx = i;
-            }
-        }
-        return { index: bestIdx, prob: bestProb };
-    }
-
-    // ===== 2. База знаний: built-in + обучение от пользователя =====
-
-    const builtinKnowledge = [
-        {
-            q: "что такое artix",
-            a: "ARTIX — персональный ИИ Артёма. Это экспериментальный проект, который полностью работает в браузере и постепенно учится новым ответам."
-        },
-        {
-            q: "кто создал artix",
-            a: "ARTIX создал Артём. Он решил собрать собственный ИИ без подключения чужих нейросетей."
-        }
-    ];
-
-    const KNOWLEDGE_KEY = "artix_knowledge_v1";
-
-    function loadUserKnowledge() {
-        try {
-            const raw = localStorage.getItem(KNOWLEDGE_KEY);
-            if (!raw) return [];
-            const data = JSON.parse(raw);
-            if (!Array.isArray(data)) return [];
-            return data.filter(item => typeof item.q === "string" && typeof item.a === "string");
-        } catch (e) {
-            return [];
-        }
-    }
-
-    let userKnowledge = loadUserKnowledge();
-
-    function saveUserKnowledge() {
-        try {
-            localStorage.setItem(KNOWLEDGE_KEY, JSON.stringify(userKnowledge));
-        } catch (e) {
-            // игнорируем ошибки localStorage
-        }
-    }
+    // =========================
+    // 1. БАЗОВЫЕ УТИЛИТЫ
+    // =========================
 
     function tokenize(text) {
         return text
             .toLowerCase()
-            .split(/[^a-zA-Zа-яА-Я0-9]+/u)
+            .split(/[^a-zA-Zа-яА-Я0-9_]+/u)
             .filter(Boolean);
     }
 
-    function similarity(q1, q2) {
-        const w1 = new Set(tokenize(q1));
-        const w2 = new Set(tokenize(q2));
-        if (!w1.size || !w2.size) return 0;
+    function similarityScore(question, item) {
+        // item: { q: "...", tags: ["..."], answer: "..." }
+        const qTokens = new Set(tokenize(question));
+        const itemText = (item.q + " " + (item.tags || []).join(" ")).toLowerCase();
+        const itemTokens = new Set(tokenize(itemText));
+
+        if (!qTokens.size || !itemTokens.size) return 0;
+
         let inter = 0;
-        w1.forEach(w => { if (w2.has(w)) inter++; });
-        return inter / Math.max(w1.size, w2.size);
+        qTokens.forEach(t => {
+            if (itemTokens.has(t)) inter++;
+        });
+
+        return inter / Math.max(qTokens.size, itemTokens.size);
     }
 
-    function findBestAnswer(question) {
-        const all = [...builtinKnowledge, ...userKnowledge];
+    function findBestMatch(question, knowledgeBase) {
         let best = null;
         let bestScore = 0;
-        for (const item of all) {
-            const s = similarity(question, item.q);
-            if (s > bestScore) {
-                bestScore = s;
+
+        for (const item of knowledgeBase) {
+            const score = similarityScore(question, item);
+            if (score > bestScore) {
+                bestScore = score;
                 best = item;
             }
         }
-        return { answer: best ? best.a : null, score: bestScore };
+
+        return { item: best, score: bestScore };
     }
 
-    // ===== 3. Чат и обучение от пользователя =====
+    // =========================
+    // 2. БАЗА ЗНАНИЙ — ОБЫЧНЫЙ РЕЖИМ
+    // =========================
+
+    const generalKnowledge = [
+        {
+            q: "что такое artix",
+            tags: ["artix", "кто ты", "ассистент"],
+            answer: "ARTIX — простой помощник и обучающая среда. Он может отвечать на базовые вопросы и показывать примеры кода на Python."
+        },
+        {
+            q: "кто тебя создал",
+            tags: ["создатель", "автор", "артем"],
+            answer: "Меня создал Артём. Этот сайт и логика ответа работают прямо в браузере."
+        },
+        {
+            q: "что такое python",
+            tags: ["python", "питон", "язык программирования"],
+            answer: "Python — популярный язык программирования высокого уровня. Его используют для веб-разработки, автоматизации, анализа данных, машинного обучения, скриптов и многого другого."
+        },
+        {
+            q: "что такое переменная",
+            tags: ["переменная"],
+            answer: "Переменная — это именованное хранилище значения. В программировании переменной дают имя и присваивают значение, чтобы потом использовать его в коде."
+        },
+        {
+            q: "что такое алгоритм",
+            tags: ["алгоритм", "шаги", "инструкция"],
+            answer: "Алгоритм — это чёткая последовательность шагов, которая описывает, как решить задачу или получить результат."
+        },
+        {
+            q: "что такое ide",
+            tags: ["ide", "редактор", "среда разработки"],
+            answer: "IDE (интегрированная среда разработки) — программа, которая помогает писать код: подсветка синтаксиса, автодополнение, запуск, отладка и т.п. Примеры: VS Code, PyCharm."
+        }
+    ];
+
+    // =========================
+    // 3. БАЗА ЗНАНИЙ — PYTHON РЕЖИМ
+    // =========================
+
+    const pythonKnowledge = [
+        {
+            q: "вывести текст на экран",
+            tags: ["print", "вывод", "текст"],
+            answer: `
+Чтобы вывести текст на экран в Python, используй функцию <code>print</code>:
+
+<pre><code>print("Привет, мир!")</code></pre>
+
+Можно выводить несколько значений:
+
+<pre><code>name = "Артём"
+age = 15
+print("Меня зовут", name, "и мне", age, "лет")</code></pre>
+            `
+        },
+        {
+            q: "создать переменную",
+            tags: ["переменная", "variable", "присвоить"],
+            answer: `
+В Python переменная создаётся сразу при присвоении:
+
+<pre><code>age = 15
+name = "Артём"
+pi = 3.14
+is_active = True</code></pre>
+
+Тип переменной определяется автоматически по значению.
+            `
+        },
+        {
+            q: "условие if",
+            tags: ["if", "else", "условие"],
+            answer: `
+Пример простого условия в Python:
+
+<pre><code>x = 10
+
+if x &gt; 5:
+    print("x больше 5")
+elif x == 5:
+    print("x равно 5")
+else:
+    print("x меньше 5")</code></pre>
+
+Отступы важны: обычно 4 пробела.
+            `
+        },
+        {
+            q: "цикл for",
+            tags: ["for", "цикл", "range"],
+            answer: `
+Пример цикла <code>for</code> с <code>range</code>:
+
+<pre><code>for i in range(5):
+    print("Итерация:", i)</code></pre>
+
+Перебор элементов списка:
+
+<pre><code>numbers = [10, 20, 30]
+for n in numbers:
+    print(n)</code></pre>
+            `
+        },
+        {
+            q: "цикл while",
+            tags: ["while", "цикл", "пока"],
+            answer: `
+Пример цикла <code>while</code>:
+
+<pre><code>count = 0
+
+while count &lt; 3:
+    print("count =", count)
+    count += 1</code></pre>
+
+Важно: следи, чтобы условие когда-нибудь стало ложным, иначе будет бесконечный цикл.
+            `
+        },
+        {
+            q: "список comprehension",
+            tags: ["list comprehension", "список", "генератор списка"],
+            answer: `
+Список (list comprehension) — удобный способ создать список:
+
+<pre><code>numbers = [1, 2, 3, 4, 5]
+squares = [x * x for x in numbers]
+print(squares)  # [1, 4, 9, 16, 25]</code></pre>
+            `
+        },
+        {
+            q: "функция def",
+            tags: ["def", "функция", "return"],
+            answer: `
+Объявление и использование функции:
+
+<pre><code>def greet(name):
+    print("Привет,", name)
+
+greet("Артём")</code></pre>
+
+Функция, возвращающая значение:
+
+<pre><code>def add(a, b):
+    return a + b
+
+result = add(2, 3)
+print(result)</code></pre>
+            `
+        },
+        {
+            q: "класс и объект",
+            tags: ["class", "класс", "объект", "self"],
+            answer: `
+Простая модель класса:
+
+<pre><code>class Player:
+    def __init__(self, name, level):
+        self.name = name
+        self.level = level
+
+    def info(self):
+        print(f"Игрок {self.name}, уровень {self.level}")
+
+p = Player("Артём", 5)
+p.info()</code></pre>
+            `
+        },
+        {
+            q: "читать файл",
+            tags: ["читать файл", "open", "read"],
+            answer: `
+Чтение всего файла:
+
+<pre><code>with open("data.txt", "r", encoding="utf-8") as f:
+    text = f.read()
+    print(text)</code></pre>
+
+Чтение по строкам:
+
+<pre><code>with open("data.txt", "r", encoding="utf-8") as f:
+    for line in f:
+        print(line.strip())</code></pre>
+            `
+        },
+        {
+            q: "записать файл",
+            tags: ["записать файл", "open", "write"],
+            answer: `
+Запись текста в файл (перезапись):
+
+<pre><code>with open("output.txt", "w", encoding="utf-8") as f:
+    f.write("Привет из Python!")</code></pre>
+
+Добавление в файл:
+
+<pre><code>with open("output.txt", "a", encoding="utf-8") as f:
+    f.write("\\nНовая строка")</code></pre>
+            `
+        },
+        {
+            q: "обработать исключения try except",
+            tags: ["try", "except", "ошибка", "исключение"],
+            answer: `
+Пример обработки ошибок:
+
+<pre><code>try:
+    x = int(input("Введи число: "))
+    print("x * 2 =", x * 2)
+except ValueError:
+    print("Это не число!")</code></pre>
+            `
+        },
+        {
+            q: "if __name__ == '__main__'",
+            tags: ["__name__", "main", "точка входа"],
+            answer: `
+Конструкция <code>if __name__ == "__main__"</code> используется как точка входа:
+
+<pre><code>def main():
+    print("Запуск основной логики")
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+Так код в <code>main()</code> выполнится только при прямом запуске файла, но не при импорте как модуля.
+            `
+        },
+        {
+            q: "установить пакет pip",
+            tags: ["pip", "установить", "package"],
+            answer: `
+Установка пакета:
+
+<pre><code>pip install requests</code></pre>
+
+Если несколько версий Python, иногда используют:
+
+<pre><code>python -m pip install requests
+python3 -m pip install requests</code></pre>
+            `
+        },
+        {
+            q: "комментарий в python",
+            tags: ["комментарий", "comment", "решетка"],
+            answer: `
+Однострочный комментарий:
+
+<pre><code># Это комментарий
+x = 10  # комментарий после кода</code></pre>
+
+Многострочный комментарий обычно делают через строку документации:
+
+<pre><code>"""
+Это многострочный
+комментарий/описание
+"""
+</code></pre>
+            `
+        },
+        {
+            q: "получить ввод пользователя",
+            tags: ["input", "ввод", "пользователь"],
+            answer: `
+Для ввода строки от пользователя:
+
+<pre><code>name = input("Как тебя зовут? ")
+print("Привет,", name)</code></pre>
+
+Для числа:
+
+<pre><code>age = int(input("Сколько тебе лет? "))
+print("Через год будет", age + 1)</code></pre>
+            `
+        }
+    ];
+
+    // =========================
+    // 4. ЧАТ И РЕЖИМЫ
+    // =========================
 
     const chatEl = document.getElementById("chat");
     const inputEl = document.getElementById("userInput");
     const sendBtn = document.getElementById("sendBtn");
+    const modeButtons = document.querySelectorAll(".mode-btn");
+    const hintsEl = document.getElementById("hints");
 
-    const teachBox = document.getElementById("teachBox");
-    const teachAnswerEl = document.getElementById("teachAnswer");
-    const teachSaveBtn = document.getElementById("teachSaveBtn");
-    const teachCancelBtn = document.getElementById("teachCancelBtn");
+    let currentMode = "general"; // "general" | "python"
 
-    const exportBtn = document.getElementById("exportBtn");
-    const exportArea = document.getElementById("exportArea");
+    function setMode(mode) {
+        currentMode = mode;
 
-    let pendingTeachQuestion = null;
+        modeButtons.forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.mode === mode);
+        });
 
-    function addMessage(text, from) {
+        if (mode === "general") {
+            inputEl.placeholder = "Задай вопрос, например: что такое переменная?";
+            hintsEl.innerHTML = `
+                <span>что такое artix</span>
+                <span>что такое python</span>
+                <span>что такое алгоритм</span>
+            `;
+            addMessage("Обычный режим: можно спрашивать базовые вещи — про переменные, алгоритмы, Python и т.п.", "bot");
+        } else {
+            inputEl.placeholder = "Спроси про код на Python, например: как сделать цикл for в python";
+            hintsEl.innerHTML = `
+                <span>как вывести текст на экран</span>
+                <span>как сделать цикл for в python</span>
+                <span>как объявить функцию</span>
+            `;
+            addMessage("Python режим: задай вопрос, а я покажу пример кода или объяснение.", "bot");
+        }
+    }
+
+    modeButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            if (btn.dataset.mode !== currentMode) {
+                setMode(btn.dataset.mode);
+            }
+        });
+    });
+
+    function addMessage(text, from, isHtml = false) {
         const div = document.createElement("div");
         div.className = "msg " + (from === "user" ? "msg-user" : "msg-bot");
 
         const span = document.createElement("span");
-        span.textContent = text;
+        if (isHtml) {
+            span.innerHTML = text;
+        } else {
+            span.textContent = text;
+        }
 
         div.appendChild(span);
         chatEl.appendChild(div);
         chatEl.scrollTop = chatEl.scrollHeight;
     }
 
-    function askUserToTeach(question) {
-        pendingTeachQuestion = question;
-        teachBox.classList.remove("hidden");
-        teachAnswerEl.value = "";
-        teachAnswerEl.focus();
+    function basicGreetingReply(question) {
+        const q = question.toLowerCase();
+        if (q.includes("привет") || q.includes("здравств")) {
+            return "Привет! Я ARTIX. Выбери режим — обычный или Python — и задавай вопросы.";
+        }
+        if (q.includes("спасибо")) {
+            return "Рад помочь!";
+        }
+        if (q.includes("как дела")) {
+            return "Работаю стабильно, готов разбирать примеры кода 🙂";
+        }
+        return null;
+    }
+
+    function answerForMode(question) {
+        // быстрая обработка простых фраз
+        const greet = basicGreetingReply(question);
+        if (greet) return { answer: greet, isHtml: false };
+
+        const kb = currentMode === "python" ? pythonKnowledge : generalKnowledge;
+        const { item, score } = findBestMatch(question, kb);
+
+        if (item && score >= 0.28) {
+            return { answer: item.answer, isHtml: true };
+        }
+
+        if (currentMode === "python") {
+            return {
+                answer: "Я пока знаю только базовые вещи по Python: переменные, условия, циклы, функции, классы, файлы, ошибки и ввод. Попробуй спросить, например: «как сделать цикл for в python» или «как прочитать файл в python».",
+                isHtml: false
+            };
+        } else {
+            return {
+                answer: "Я не нашёл подходящий ответ. Попробуй переформулировать вопрос или спросить что-то базовое, например: «что такое переменная» или «что такое python».",
+                isHtml: false
+            };
+        }
     }
 
     function handleSend() {
@@ -458,27 +676,11 @@
         addMessage(text, "user");
         inputEl.value = "";
 
-        // 1. Пытаемся распознать интент (привет/как дела/кто ты)
-        const { index, prob } = predictIntent(text);
+        const { answer, isHtml } = answerForMode(text);
 
-        if (prob >= 0.7) {
-            const reply = intentResponses[index];
-            setTimeout(() => addMessage(reply, "bot"), 200);
-            return;
-        }
-
-        // 2. Пытаемся найти ответ в базе знаний
-        const { answer, score } = findBestAnswer(text);
-
-        if (answer && score >= 0.35) {
-            setTimeout(() => addMessage(answer, "bot"), 200);
-            return;
-        }
-
-        // 3. Не знаем — просим научить
-        const reply = "Я пока не знаю ответ на этот вопрос. Можешь подсказать, что отвечать в таких случаях?";
-        setTimeout(() => addMessage(reply, "bot"), 200);
-        askUserToTeach(text);
+        setTimeout(() => {
+            addMessage(answer, "bot", isHtml);
+        }, 150);
     }
 
     sendBtn.addEventListener("click", handleSend);
@@ -486,35 +688,8 @@
         if (e.key === "Enter") handleSend();
     });
 
-    teachSaveBtn.addEventListener("click", () => {
-        const a = teachAnswerEl.value.trim();
-        if (!a || !pendingTeachQuestion) return;
-
-        userKnowledge.push({ q: pendingTeachQuestion, a });
-        saveUserKnowledge();
-
-        addMessage("Запомнил этот ответ, спасибо!", "bot");
-        addMessage(a, "bot");
-
-        pendingTeachQuestion = null;
-        teachBox.classList.add("hidden");
-    });
-
-    teachCancelBtn.addEventListener("click", () => {
-        pendingTeachQuestion = null;
-        teachBox.classList.add("hidden");
-    });
-
-    exportBtn.addEventListener("click", () => {
-        const data = {
-            version: 1,
-            knowledge: userKnowledge
-        };
-        exportArea.value = JSON.stringify(data, null, 2);
-    });
-
-    // Приветственное сообщение
-    addMessage("Привет! Я ARTIX. Задавай вопросы. Если я не знаю ответ — ты можешь меня научить.", "bot");
+    // стартовое сообщение
+    addMessage("Привет! Я ARTIX. В обычном режиме отвечаю на базовые вопросы, в Python режиме показываю примеры кода.", "bot");
 </script>
 </body>
 </html>
