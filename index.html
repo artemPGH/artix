@@ -195,6 +195,7 @@
             margin-right: 4px;
             margin-bottom: 2px;
             display: inline-block;
+            cursor: pointer;
         }
 
         @media (max-width: 600px) {
@@ -215,7 +216,7 @@
     <div class="header">
         <div>
             <div class="title">ARTIX</div>
-            <div class="subtitle">простая обучающая среда и помощник по Python</div>
+            <div class="subtitle">помощник с режимами: обычный и Python</div>
         </div>
         <div class="mode-switch">
             <button class="mode-btn active" data-mode="general">Обычный режим</button>
@@ -238,7 +239,7 @@
         <div>
             <span class="hint-label">Режимы:</span>
             <span>обычный — базовые вопросы,</span>
-            <span>Python — примеры кода и подсказки.</span>
+            <span>Python — примеры кода и поиск по StackOverflow.</span>
         </div>
         <div class="hints" id="hints">
             <span>что такое python</span>
@@ -249,7 +250,7 @@
 
 <script>
     // =========================
-    // 1. БАЗОВЫЕ УТИЛИТЫ
+    // 1. Утилиты
     // =========================
 
     function tokenize(text) {
@@ -260,7 +261,6 @@
     }
 
     function similarityScore(question, item) {
-        // item: { q: "...", tags: ["..."], answer: "..." }
         const qTokens = new Set(tokenize(question));
         const itemText = (item.q + " " + (item.tags || []).join(" ")).toLowerCase();
         const itemTokens = new Set(tokenize(itemText));
@@ -290,8 +290,24 @@
         return { item: best, score: bestScore };
     }
 
+    function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, function (c) {
+            return ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#39;"
+            })[c];
+        });
+    }
+
+    function normalizeQuestion(text) {
+        return tokenize(text).join(" ");
+    }
+
     // =========================
-    // 2. БАЗА ЗНАНИЙ — ОБЫЧНЫЙ РЕЖИМ
+    // 2. Локальная база знаний
     // =========================
 
     const generalKnowledge = [
@@ -319,17 +335,8 @@
             q: "что такое алгоритм",
             tags: ["алгоритм", "шаги", "инструкция"],
             answer: "Алгоритм — это чёткая последовательность шагов, которая описывает, как решить задачу или получить результат."
-        },
-        {
-            q: "что такое ide",
-            tags: ["ide", "редактор", "среда разработки"],
-            answer: "IDE (интегрированная среда разработки) — программа, которая помогает писать код: подсветка синтаксиса, автодополнение, запуск, отладка и т.п. Примеры: VS Code, PyCharm."
         }
     ];
-
-    // =========================
-    // 3. БАЗА ЗНАНИЙ — PYTHON РЕЖИМ
-    // =========================
 
     const pythonKnowledge = [
         {
@@ -375,8 +382,6 @@ elif x == 5:
     print("x равно 5")
 else:
     print("x меньше 5")</code></pre>
-
-Отступы важны: обычно 4 пробела.
             `
         },
         {
@@ -396,32 +401,6 @@ for n in numbers:
             `
         },
         {
-            q: "цикл while",
-            tags: ["while", "цикл", "пока"],
-            answer: `
-Пример цикла <code>while</code>:
-
-<pre><code>count = 0
-
-while count &lt; 3:
-    print("count =", count)
-    count += 1</code></pre>
-
-Важно: следи, чтобы условие когда-нибудь стало ложным, иначе будет бесконечный цикл.
-            `
-        },
-        {
-            q: "список comprehension",
-            tags: ["list comprehension", "список", "генератор списка"],
-            answer: `
-Список (list comprehension) — удобный способ создать список:
-
-<pre><code>numbers = [1, 2, 3, 4, 5]
-squares = [x * x for x in numbers]
-print(squares)  # [1, 4, 9, 16, 25]</code></pre>
-            `
-        },
-        {
             q: "функция def",
             tags: ["def", "функция", "return"],
             answer: `
@@ -431,145 +410,124 @@ print(squares)  # [1, 4, 9, 16, 25]</code></pre>
     print("Привет,", name)
 
 greet("Артём")</code></pre>
-
-Функция, возвращающая значение:
-
-<pre><code>def add(a, b):
-    return a + b
-
-result = add(2, 3)
-print(result)</code></pre>
-            `
-        },
-        {
-            q: "класс и объект",
-            tags: ["class", "класс", "объект", "self"],
-            answer: `
-Простая модель класса:
-
-<pre><code>class Player:
-    def __init__(self, name, level):
-        self.name = name
-        self.level = level
-
-    def info(self):
-        print(f"Игрок {self.name}, уровень {self.level}")
-
-p = Player("Артём", 5)
-p.info()</code></pre>
-            `
-        },
-        {
-            q: "читать файл",
-            tags: ["читать файл", "open", "read"],
-            answer: `
-Чтение всего файла:
-
-<pre><code>with open("data.txt", "r", encoding="utf-8") as f:
-    text = f.read()
-    print(text)</code></pre>
-
-Чтение по строкам:
-
-<pre><code>with open("data.txt", "r", encoding="utf-8") as f:
-    for line in f:
-        print(line.strip())</code></pre>
-            `
-        },
-        {
-            q: "записать файл",
-            tags: ["записать файл", "open", "write"],
-            answer: `
-Запись текста в файл (перезапись):
-
-<pre><code>with open("output.txt", "w", encoding="utf-8") as f:
-    f.write("Привет из Python!")</code></pre>
-
-Добавление в файл:
-
-<pre><code>with open("output.txt", "a", encoding="utf-8") as f:
-    f.write("\\nНовая строка")</code></pre>
-            `
-        },
-        {
-            q: "обработать исключения try except",
-            tags: ["try", "except", "ошибка", "исключение"],
-            answer: `
-Пример обработки ошибок:
-
-<pre><code>try:
-    x = int(input("Введи число: "))
-    print("x * 2 =", x * 2)
-except ValueError:
-    print("Это не число!")</code></pre>
-            `
-        },
-        {
-            q: "if __name__ == '__main__'",
-            tags: ["__name__", "main", "точка входа"],
-            answer: `
-Конструкция <code>if __name__ == "__main__"</code> используется как точка входа:
-
-<pre><code>def main():
-    print("Запуск основной логики")
-
-if __name__ == "__main__":
-    main()</code></pre>
-
-Так код в <code>main()</code> выполнится только при прямом запуске файла, но не при импорте как модуля.
-            `
-        },
-        {
-            q: "установить пакет pip",
-            tags: ["pip", "установить", "package"],
-            answer: `
-Установка пакета:
-
-<pre><code>pip install requests</code></pre>
-
-Если несколько версий Python, иногда используют:
-
-<pre><code>python -m pip install requests
-python3 -m pip install requests</code></pre>
-            `
-        },
-        {
-            q: "комментарий в python",
-            tags: ["комментарий", "comment", "решетка"],
-            answer: `
-Однострочный комментарий:
-
-<pre><code># Это комментарий
-x = 10  # комментарий после кода</code></pre>
-
-Многострочный комментарий обычно делают через строку документации:
-
-<pre><code>"""
-Это многострочный
-комментарий/описание
-"""
-</code></pre>
-            `
-        },
-        {
-            q: "получить ввод пользователя",
-            tags: ["input", "ввод", "пользователь"],
-            answer: `
-Для ввода строки от пользователя:
-
-<pre><code>name = input("Как тебя зовут? ")
-print("Привет,", name)</code></pre>
-
-Для числа:
-
-<pre><code>age = int(input("Сколько тебе лет? "))
-print("Через год будет", age + 1)</code></pre>
             `
         }
     ];
 
     // =========================
-    // 4. ЧАТ И РЕЖИМЫ
+    // 3. Кэш ответов из интернета (обучение)
+    // =========================
+
+    const WEB_CACHE_KEY = "artix_web_cache_v1";
+
+    function loadWebCache() {
+        try {
+            const raw = localStorage.getItem(WEB_CACHE_KEY);
+            if (!raw) return {};
+            const data = JSON.parse(raw);
+            return typeof data === "object" && data !== null ? data : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    let webCache = loadWebCache();
+
+    function saveWebCache() {
+        try {
+            localStorage.setItem(WEB_CACHE_KEY, JSON.stringify(webCache));
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function renderWebResultHTML(result) {
+        if (!result) return "Я ничего не нашёл.";
+
+        if (result.source === "wikipedia") {
+            const title = escapeHtml(result.title || "");
+            const snippet = escapeHtml(result.snippet || "");
+            const url = result.url || "#";
+            return `
+Нашёл в Википедии: <b>${title}</b><br>
+<span>${snippet}</span><br>
+<a href="${url}" target="_blank" rel="noopener noreferrer">Открыть статью</a>
+            `;
+        }
+
+        if (result.source === "stackoverflow") {
+            const title = escapeHtml(result.title || "");
+            const url = result.url || "#";
+            return `
+Нашёл вопрос на StackOverflow по Python:<br>
+<b>${title}</b><br>
+<a href="${url}" target="_blank" rel="noopener noreferrer">Открыть обсуждение</a>
+            `;
+        }
+
+        return escapeHtml(result.text || "Я ничего не нашёл.");
+    }
+
+    // =========================
+    // 4. Интернет-поиск (бесплатные API)
+    // =========================
+
+    // 4.1. Обычный режим — Wikipedia (ru)
+    async function fetchFromWikipedia(question) {
+        const searchUrl =
+            "https://ru.wikipedia.org/w/api.php" +
+            "?action=opensearch" +
+            "&limit=1" +
+            "&namespace=0" +
+            "&format=json" +
+            "&origin=*" +
+            "&search=" + encodeURIComponent(question);
+
+        const res = await fetch(searchUrl);
+        if (!res.ok) return null;
+        const data = await res.json();
+
+        const title = data[1] && data[1][0];
+        const desc = data[2] && data[2][0];
+        const url  = data[3] && data[3][0];
+
+        if (!title || !url) return null;
+
+        return {
+            source: "wikipedia",
+            title,
+            snippet: desc || "",
+            url
+        };
+    }
+
+    // 4.2. Python-режим — StackOverflow (без ключа, маленькая квота)
+    async function fetchFromStackOverflowPython(question) {
+        const apiUrl =
+            "https://api.stackexchange.com/2.3/search/advanced" +
+            "?order=desc&sort=relevance" +
+            "&answers=1" +
+            "&tagged=python" +
+            "&site=stackoverflow" +
+            "&pagesize=1" +
+            "&q=" + encodeURIComponent(question);
+
+        const res = await fetch(apiUrl);
+        if (!res.ok) return null;
+
+        const data = await res.json();
+        if (!data.items || !data.items.length) return null;
+
+        const item = data.items[0];
+        return {
+            source: "stackoverflow",
+            title: item.title,
+            url: item.link
+        };
+    }
+
+    // =========================
+    // 5. Чат и режимы
     // =========================
 
     const chatEl = document.getElementById("chat");
@@ -578,7 +536,7 @@ print("Через год будет", age + 1)</code></pre>
     const modeButtons = document.querySelectorAll(".mode-btn");
     const hintsEl = document.getElementById("hints");
 
-    let currentMode = "general"; // "general" | "python"
+    let currentMode = "general";
 
     function setMode(mode) {
         currentMode = mode;
@@ -594,15 +552,15 @@ print("Через год будет", age + 1)</code></pre>
                 <span>что такое python</span>
                 <span>что такое алгоритм</span>
             `;
-            addMessage("Обычный режим: можно спрашивать базовые вещи — про переменные, алгоритмы, Python и т.п.", "bot");
+            addMessage("Обычный режим: можно спрашивать базовые вещи. Если я сам не знаю — попробую найти ответ в Википедии.", "bot");
         } else {
             inputEl.placeholder = "Спроси про код на Python, например: как сделать цикл for в python";
             hintsEl.innerHTML = `
                 <span>как вывести текст на экран</span>
                 <span>как сделать цикл for в python</span>
-                <span>как объявить функцию</span>
+                <span>пример функции в python</span>
             `;
-            addMessage("Python режим: задай вопрос, а я покажу пример кода или объяснение.", "bot");
+            addMessage("Python режим: сначала ищу в своих примерах, если их нет — попробую найти подходящий вопрос на StackOverflow.", "bot");
         }
     }
 
@@ -612,6 +570,13 @@ print("Через год будет", age + 1)</code></pre>
                 setMode(btn.dataset.mode);
             }
         });
+    });
+
+    hintsEl.addEventListener("click", (e) => {
+        if (e.target.tagName === "SPAN") {
+            inputEl.value = e.target.textContent;
+            inputEl.focus();
+        }
     });
 
     function addMessage(text, from, isHtml = false) {
@@ -636,60 +601,82 @@ print("Через год будет", age + 1)</code></pre>
             return "Привет! Я ARTIX. Выбери режим — обычный или Python — и задавай вопросы.";
         }
         if (q.includes("спасибо")) {
-            return "Рад помочь!";
+            return "Пожалуйста!";
         }
         if (q.includes("как дела")) {
-            return "Работаю стабильно, готов разбирать примеры кода 🙂";
+            return "Работаю нормально, обрабатываю запросы 🙂";
         }
         return null;
     }
 
-    function answerForMode(question) {
-        // быстрая обработка простых фраз
+    function pickLocalAnswer(question) {
         const greet = basicGreetingReply(question);
-        if (greet) return { answer: greet, isHtml: false };
+        if (greet) return { answer: greet, isHtml: false, found: true };
 
         const kb = currentMode === "python" ? pythonKnowledge : generalKnowledge;
         const { item, score } = findBestMatch(question, kb);
 
         if (item && score >= 0.28) {
-            return { answer: item.answer, isHtml: true };
+            return { answer: item.answer, isHtml: true, found: true };
         }
 
-        if (currentMode === "python") {
-            return {
-                answer: "Я пока знаю только базовые вещи по Python: переменные, условия, циклы, функции, классы, файлы, ошибки и ввод. Попробуй спросить, например: «как сделать цикл for в python» или «как прочитать файл в python».",
-                isHtml: false
-            };
-        } else {
-            return {
-                answer: "Я не нашёл подходящий ответ. Попробуй переформулировать вопрос или спросить что-то базовое, например: «что такое переменная» или «что такое python».",
-                isHtml: false
-            };
-        }
+        return { answer: null, isHtml: false, found: false };
     }
 
-    function handleSend() {
+    async function handleSend() {
         const text = inputEl.value.trim();
         if (!text) return;
 
         addMessage(text, "user");
         inputEl.value = "";
 
-        const { answer, isHtml } = answerForMode(text);
+        // 1. Пробуем ответить локально
+        const local = pickLocalAnswer(text);
+        if (local.found) {
+            addMessage(local.answer, "bot", local.isHtml);
+            return;
+        }
 
-        setTimeout(() => {
-            addMessage(answer, "bot", isHtml);
-        }, 150);
+        // 2. Проверяем кэш “из интернета”
+        const norm = normalizeQuestion(text);
+        if (webCache[norm]) {
+            const html = renderWebResultHTML(webCache[norm]);
+            addMessage(html, "bot", true);
+            return;
+        }
+
+        // 3. Говорим, что идём в интернет
+        addMessage("Я этого не знаю. Попробую найти что-то в интернете...", "bot");
+
+        try {
+            let result = null;
+            if (currentMode === "python") {
+                result = await fetchFromStackOverflowPython(text);
+            } else {
+                result = await fetchFromWikipedia(text);
+            }
+
+            if (result) {
+                webCache[norm] = result;
+                saveWebCache();
+
+                const html = renderWebResultHTML(result);
+                addMessage(html, "bot", true);
+            } else {
+                addMessage("Я ничего полезного не нашёл. Попробуй переформулировать вопрос.", "bot");
+            }
+        } catch (e) {
+            addMessage("Произошла ошибка при запросе к внешнему сайту. Возможно, временные проблемы с сетью.", "bot");
+        }
     }
 
-    sendBtn.addEventListener("click", handleSend);
+    sendBtn.addEventListener("click", () => { handleSend(); });
     inputEl.addEventListener("keydown", (e) => {
         if (e.key === "Enter") handleSend();
     });
 
-    // стартовое сообщение
-    addMessage("Привет! Я ARTIX. В обычном режиме отвечаю на базовые вопросы, в Python режиме показываю примеры кода.", "bot");
+    // старт
+    addMessage("Привет! Я ARTIX. В обычном режиме отвечаю на базовые вопросы и при необходимости обращаюсь к Википедии. В Python режиме показываю примеры кода и могу искать ответы на StackOverflow.", "bot");
 </script>
 </body>
 </html>
