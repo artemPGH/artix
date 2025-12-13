@@ -1,100 +1,37 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ARTIX</title>
 
 <style>
-*{box-sizing:border-box}
-html,body{
-  margin:0;height:100%;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  background:radial-gradient(circle at top,#0b1220,#020308 70%);
-  color:#e5e7eb;
-}
-.app{
-  height:100%;
-  display:flex;
-  flex-direction:column;
-  padding:14px;
-}
-.panel{
-  flex:1;
-  background:rgba(8,10,26,.96);
-  border-radius:18px;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  box-shadow:0 0 40px rgba(0,0,0,.8);
-}
-.header{
-  padding:14px 18px;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  display:flex;
-  justify-content:space-between;
-}
-.title{letter-spacing:.18em;font-weight:700}
-.subtitle{font-size:12px;opacity:.6}
-.status{
-  font-size:12px;
-  padding:6px 10px;
-  border-radius:999px;
-  border:1px solid rgba(148,163,184,.35);
-}
-.chat{
-  flex:1;
-  padding:16px;
-  overflow-y:auto;
-  background:rgba(15,23,42,.92);
-}
-.msg{margin-bottom:10px;display:flex}
-.msg.user{justify-content:flex-end}
-.msg.bot{justify-content:flex-start}
-.bubble{
-  max-width:90%;
-  padding:12px 14px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,.08);
-  white-space:pre-wrap;
-}
-.user .bubble{background:linear-gradient(135deg,#2563eb55,#020617)}
-.bot .bubble{background:linear-gradient(135deg,#10b98133,#020617)}
-pre{
-  background:#020617;
-  border:1px solid rgba(148,163,184,.4);
-  padding:12px;
-  border-radius:12px;
-  overflow-x:auto;
-}
-code{font-family:ui-monospace,Consolas,monospace;font-size:13px}
-.input{
-  padding:12px;
-  border-top:1px solid rgba(255,255,255,.06);
-  display:flex;
-  gap:10px;
-}
-textarea{
-  flex:1;
-  min-height:48px;
-  max-height:220px;
-  resize:none;
-  background:#020617;
-  color:#e5e7eb;
-  border:1px solid rgba(148,163,184,.4);
-  border-radius:12px;
-  padding:10px;
-}
-button{
-  background:linear-gradient(135deg,#4f46e5,#06b6d4);
-  border:none;
-  color:#fff;
-  font-weight:700;
-  border-radius:12px;
-  padding:10px 16px;
-  cursor:pointer;
-}
-button:hover{opacity:.9}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#0b1220,#020308 70%);color:#e5e7eb}
+  .app{height:100%;display:flex;padding:14px}
+  .panel{flex:1;background:rgba(8,10,26,.96);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.8)}
+  .header{padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .left{min-width:0}
+  .title{letter-spacing:.18em;font-weight:800;text-transform:uppercase}
+  .subtitle{font-size:12px;opacity:.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70vw}
+  .status{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid rgba(148,163,184,.35);opacity:.9;white-space:nowrap}
+  .chat{flex:1;padding:16px;overflow-y:auto;background:rgba(15,23,42,.92)}
+  .msg{margin-bottom:10px;display:flex}
+  .msg.user{justify-content:flex-end}
+  .msg.bot{justify-content:flex-start}
+  .bubble{max-width:90%;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.08);white-space:pre-wrap;word-break:break-word}
+  .user .bubble{background:linear-gradient(135deg,#2563eb55,#020617)}
+  .bot .bubble{background:linear-gradient(135deg,#10b98133,#020617)}
+  .meta{margin-top:8px;font-size:11px;opacity:.6}
+  pre{background:#020617;border:1px solid rgba(148,163,184,.35);padding:12px;border-radius:12px;overflow-x:auto;margin:10px 0 0}
+  code{font-family:ui-monospace,Consolas,monospace;font-size:13px}
+  .input{padding:12px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:10px;align-items:flex-end}
+  textarea{flex:1;min-height:48px;max-height:220px;resize:none;background:#020617;color:#e5e7eb;border:1px solid rgba(148,163,184,.4);border-radius:12px;padding:10px;outline:none;line-height:1.35}
+  button{background:linear-gradient(135deg,#4f46e5,#06b6d4);border:none;color:#fff;font-weight:800;border-radius:12px;padding:10px 16px;cursor:pointer;white-space:nowrap}
+  button:hover{opacity:.92}
+  .tools{display:flex;gap:8px;align-items:center}
+  .btn-mini{background:rgba(2,6,23,.25);border:1px solid rgba(148,163,184,.25);padding:7px 10px;border-radius:999px;font-weight:700}
+  .btn-mini:hover{border-color:rgba(148,163,184,.55)}
 </style>
 </head>
 
@@ -102,11 +39,14 @@ button:hover{opacity:.9}
 <div class="app">
   <div class="panel">
     <div class="header">
-      <div>
+      <div class="left">
         <div class="title">ARTIX</div>
         <div class="subtitle">умный ассистент · код · факты</div>
       </div>
-      <div class="status" id="status">загрузка…</div>
+      <div class="tools">
+        <div class="status" id="status">загрузка…</div>
+        <button class="btn-mini" id="clear">Очистить чат</button>
+      </div>
     </div>
 
     <div class="chat" id="chat"></div>
@@ -119,102 +59,276 @@ button:hover{opacity:.9}
 </div>
 
 <script type="module">
-import { pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
+  import { pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
 
-const MODEL = "Xenova/Qwen1.5-0.5B-Chat";
+  // Chat-модель (не codegen). Работает заметно лучше для диалога.
+  const MODEL = "Xenova/Qwen1.5-0.5B-Chat";
 
-const chat = document.getElementById("chat");
-const input = document.getElementById("input");
-const statusEl = document.getElementById("status");
-const sendBtn = document.getElementById("send");
+  const chat = document.getElementById("chat");
+  const input = document.getElementById("input");
+  const statusEl = document.getElementById("status");
+  const sendBtn = document.getElementById("send");
+  const clearBtn = document.getElementById("clear");
 
-function msg(text, role){
-  const d=document.createElement("div");
-  d.className="msg "+role;
-  const b=document.createElement("div");
-  b.className="bubble";
-  b.innerHTML=text;
-  d.appendChild(b);
-  chat.appendChild(d);
-  chat.scrollTop=chat.scrollHeight;
-}
+  function esc(s){
+    return String(s).replace(/[&<>"']/g,c=>({
+      "&":"&amp;","<":"&lt;",">":"&gt;",
+      '"':"&quot;","'":"&#39;"
+    }[c]));
+  }
 
-function esc(s){
-  return s.replace(/[&<>"']/g,c=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",
-    '"':"&quot;","'":"&#39;"
-  }[c]));
-}
+  function setStatus(t){ statusEl.textContent = t; }
 
-function auto(){
-  input.style.height="auto";
-  input.style.height=Math.min(input.scrollHeight,220)+"px";
-}
-input.addEventListener("input",auto);
+  function msg(text, role="bot", meta=null){
+    const d=document.createElement("div");
+    d.className="msg "+role;
+    const b=document.createElement("div");
+    b.className="bubble";
+    b.innerHTML=text;
 
-function mathTry(t){
-  const c=t.replace(/×/g,"*").replace(/÷/g,"/").replace(/[^0-9+\-*/(). ]/g,"");
-  if(!c)return null;
-  try{return eval(c)}catch{return null}
-}
+    if(meta){
+      const m=document.createElement("div");
+      m.className="meta";
+      m.innerHTML=meta;
+      b.appendChild(m);
+    }
 
-async function wikiTry(q){
-  try{
-    const r=await fetch("https://ru.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(q));
-    if(!r.ok)return null;
-    const j=await r.json();
-    if(j.extract)return j.extract+"<div style='opacity:.6;font-size:11px'>Источник: Wikipedia</div>";
-  }catch{}
-  return null;
-}
+    d.appendChild(b);
+    chat.appendChild(d);
+    chat.scrollTop=chat.scrollHeight;
+    return b;
+  }
 
-function isCode(t){
-  return /(;|\{|\}|\bdef\b|\bclass\b|System\.out|print\(|function)/.test(t);
-}
+  function autoResize(){
+    input.style.height="auto";
+    input.style.height=Math.min(input.scrollHeight,220)+"px";
+  }
+  input.addEventListener("input", autoResize);
 
-let generator;
-statusEl.textContent="загрузка модели…";
-generator = await pipeline("text-generation", MODEL);
-statusEl.textContent="готов";
-
-msg("Привет! Я ARTIX. Пиши вопрос или вставляй код.", "bot");
-
-async function send(){
-  const text=input.value.trim();
-  if(!text)return;
-  input.value="";auto();
-  msg(esc(text),"user");
-
-  const m=mathTry(text);
-  if(m!==null){msg("Ответ: "+m,"bot");return;}
-
-  const w=await wikiTry(text);
-  if(w){msg(w,"bot");return;}
-
-  statusEl.textContent="думаю…";
-
-  const prompt = isCode(text)
-? `Ты программист. Исправь или напиши код. Сначала код, потом краткое объяснение.\n\n${text}\n\nОтвет:`
-: `Ты умный ассистент. Ответь кратко и понятно.\n\nВопрос: ${text}\n\nОтвет:`;
-
-  const out = await generator(prompt,{
-    max_new_tokens:400,
-    temperature:0.6,
-    top_p:0.9,
-    do_sample:true,
-    return_full_text:false
+  input.addEventListener("keydown", (e)=>{
+    if(e.key==="Enter" && !e.shiftKey){
+      e.preventDefault();
+      send();
+    }
   });
+  sendBtn.onclick=send;
 
-  let r = esc(out[0].generated_text || "");
-  r = r.replace(/```([\s\S]*?)```/g,"<pre><code>$1</code></pre>");
-  msg(r || "Не смог ответить. Попробуй уточнить.","bot");
-  statusEl.textContent="готов";
-}
+  clearBtn.onclick=()=>{
+    chat.innerHTML="";
+    msg("Чат очищен. Пиши вопрос или вставляй код.", "bot");
+  };
 
-sendBtn.onclick=send;
-input.addEventListener("keydown",e=>{
-  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}
-});
+  // ---------------- 1) Системные локальные ответы ----------------
+  function systemAnswer(q){
+    const s=q.toLowerCase().trim();
+
+    if(/^(привет|здравствуй|хай|hello)\b/.test(s))
+      return "Привет! Пиши вопрос или вставляй код — помогу.";
+
+    if(/(как дела|как ты)/.test(s))
+      return "Нормально 🙂 Кидай задачу или код — разберём.";
+
+    if(/(спасибо|благодарю)/.test(s))
+      return "Пожалуйста!";
+
+    if(/(какой сегодня день|какая сегодня дата)/.test(s)){
+      return new Date().toLocaleDateString("ru-RU",{weekday:"long",year:"numeric",month:"long",day:"numeric"}) + ".";
+    }
+
+    if(/(который час|сколько времени|какое время)/.test(s)){
+      return "Сейчас " + new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}) + ".";
+    }
+
+    return null;
+  }
+
+  // ---------------- 2) Математика (фикс undefined) ----------------
+  function mathTry(text){
+    // оставляем только матем. символы
+    const clean = text
+      .replace(/×/g,"*")
+      .replace(/÷/g,"/")
+      .replace(/[^0-9+\-*/(). ]/g,"")
+      .trim();
+
+    if(!clean) return null;
+
+    // защита: только допустимые символы
+    if(!/^[0-9+\-*/(). ]+$/.test(clean)) return null;
+
+    try{
+      const result = eval(clean);
+      if(typeof result === "number" && isFinite(result)) return result;
+    }catch{}
+
+    return null;
+  }
+
+  // ---------------- 3) Определение "код/программирование" ----------------
+  function isCode(text){
+    const t=text;
+    return (
+      /```/.test(t) ||
+      /;|\{|\}|\bdef\b|\bclass\b|\bimport\b|System\.out|console\.log|print\(|function\b/.test(t) ||
+      /Traceback|SyntaxError|TypeError|ReferenceError|Exception/.test(t)
+    );
+  }
+
+  // ---------------- 4) Wikipedia fallback (чтобы не отвечать мусором) ----------------
+  const WIKI_STOP = new Set(["ало","ала","ага","ок","ok","лол","хаха","привет","hi","hello","test","тест"]);
+  function isWikiCandidate(q){
+    const s=q.trim().toLowerCase();
+    if(s.length < 4) return false;
+    if(WIKI_STOP.has(s)) return false;
+    // если это явно математика или кусок кода — в вики не лезем
+    if(/^[0-9+\-*/(). ×÷]+$/.test(s)) return false;
+    if(isCode(q)) return false;
+    return true;
+  }
+
+  async function wikiTry(q){
+    if(!isWikiCandidate(q)) return null;
+
+    try{
+      const url="https://ru.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(q);
+      const r=await fetch(url);
+      if(!r.ok) return null;
+      const j=await r.json();
+      if(!j.extract) return null;
+
+      const text = j.extract.split(/(?<=\.)\s+/).slice(0,4).join(" ");
+      const link = j.content_urls?.desktop?.page;
+
+      return {
+        html: esc(text),
+        meta: link ? `Источник: <a href="${link}" target="_blank" rel="noopener noreferrer">Wikipedia</a>` : "Источник: Wikipedia"
+      };
+    }catch{
+      return null;
+    }
+  }
+
+  // ---------------- 5) LLM (основной интеллект) ----------------
+  let generator;
+  setStatus("загрузка модели…");
+  msg("Загружаю модель… Первый запуск может быть долгим (скачивание в кэш).", "bot");
+
+  try{
+    generator = await pipeline("text-generation", MODEL);
+    setStatus("готов");
+    msg("Готово. Пиши вопрос или вставляй код.", "bot", `Модель: <b>${esc(MODEL)}</b>`);
+  }catch(e){
+    setStatus("ошибка модели");
+    msg(`<b>Не удалось загрузить модель</b>\n\n<pre><code>${esc(String(e))}</code></pre>\n\nПопробуй открыть сайт в Chrome/Edge и обновить Ctrl+F5.`, "bot");
+  }
+
+  function buildPrompt(userText){
+    // жёсткий формат ответа
+    if(isCode(userText)){
+      return [
+        "Ты опытный программист-ассистент.",
+        "Задача: исправить/написать/объяснить код.",
+        "Правила:",
+        "- Сначала: готовое решение (код) в ``` ```",
+        "- Потом: короткое объяснение (1-5 пунктов)",
+        "- Если не хватает данных — задай 1 уточняющий вопрос",
+        "",
+        "Запрос:",
+        userText,
+        "",
+        "Ответ:"
+      ].join("\n");
+    }
+
+    return [
+      "Ты умный ассистент.",
+      "Отвечай по-русски, кратко и понятно.",
+      "Если вопрос про факт — дай короткий факт.",
+      "Если вопрос неполный — попроси уточнить.",
+      "",
+      "Вопрос:",
+      userText,
+      "",
+      "Ответ:"
+    ].join("\n");
+  }
+
+  function renderLLM(text){
+    const safe = esc(text || "").trim();
+
+    if(!safe) return null;
+
+    // рендер ```code```
+    const withCode = safe.replace(/```([\s\S]*?)```/g, (m,g1)=>`<pre><code>${g1}</code></pre>`);
+
+    return withCode;
+  }
+
+  // ---------------- send() (приоритеты как у “умного” ассистента) ----------------
+  async function send(){
+    const text=input.value.trim();
+    if(!text) return;
+
+    input.value=""; autoResize();
+    msg(esc(text), "user");
+
+    // 1) математика
+    const m = mathTry(text);
+    if(m !== null){
+      msg("Ответ: " + esc(String(m)), "bot");
+      return;
+    }
+
+    // 2) системные ответы
+    const sys = systemAnswer(text);
+    if(sys){
+      msg(esc(sys), "bot");
+      return;
+    }
+
+    // 3) LLM (главный)
+    if(generator){
+      setStatus("думаю…");
+      const thinking = msg("Думаю…", "bot");
+
+      try{
+        const prompt = buildPrompt(text);
+
+        const out = await generator(prompt,{
+          max_new_tokens: 500,
+          temperature: 0.55,
+          top_p: 0.9,
+          do_sample: true,
+          return_full_text: false
+        });
+
+        const gen = out?.[0]?.generated_text ?? "";
+        const rendered = renderLLM(gen);
+
+        thinking.parentElement.remove(); // убираем "Думаю…"
+
+        if(rendered){
+          msg(rendered, "bot");
+          setStatus("готов");
+          return;
+        }
+      }catch(e){
+        thinking.parentElement.remove();
+        msg(`Ошибка генерации: <pre><code>${esc(String(e))}</code></pre>`, "bot");
+      }finally{
+        setStatus("готов");
+      }
+    }
+
+    // 4) Wikipedia fallback (если модель не ответила)
+    const wiki = await wikiTry(text);
+    if(wiki){
+      msg(wiki.html, "bot", wiki.meta);
+      return;
+    }
+
+    msg("Я не смог ответить. Попробуй уточнить вопрос или добавить контекст.", "bot");
+  }
 </script>
 </body>
 </html>
