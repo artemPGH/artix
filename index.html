@@ -1,274 +1,514 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<title>ARTIX</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ARTIX</title>
+  <style>
+    * { box-sizing: border-box; }
 
-<style>
-* { box-sizing: border-box; }
+    :root {
+      --bg1: #050716;
+      --bg2: #020308;
+      --card: rgba(8, 10, 26, 0.96);
+      --panel: rgba(15, 23, 42, 0.92);
+      --border: rgba(148, 163, 184, 0.35);
+      --border2: rgba(30, 64, 175, 0.45);
+      --text: #e5e7eb;
+      --muted: rgba(229, 231, 235, 0.70);
+      --muted2: rgba(229, 231, 235, 0.55);
+      --user: linear-gradient(135deg, rgba(59,130,246,.35), rgba(8,47,73,.9));
+      --bot: linear-gradient(135deg, rgba(16,185,129,.22), rgba(15,23,42,.95));
+      --btn: linear-gradient(135deg, #4f46e5, #06b6d4);
+    }
 
-body {
-    margin: 0;
-    min-height: 100vh;
-    background: radial-gradient(circle at top, #050716, #020308 60%, #000);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #e5e7eb;
-}
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: radial-gradient(circle at top, var(--bg1), var(--bg2) 60%, #000);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+    }
 
-.app {
-    width: 100%;
-    max-width: 760px;
-    background: rgba(8,10,26,.96);
-    border-radius: 20px;
-    padding: 22px;
-    box-shadow:
-        0 0 40px rgba(0,0,0,.8),
-        0 0 80px rgba(88,166,255,.18);
-    border: 1px solid rgba(255,255,255,.06);
-}
+    /* Fullscreen layout */
+    .page {
+      height: 100%;
+      display: flex;
+      padding: 14px;
+    }
 
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
+    .app {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px;
+      box-shadow: 0 0 40px rgba(0,0,0,.8), 0 0 80px rgba(88,166,255,.16);
+      overflow: hidden;
+      min-width: 0;
+    }
 
-.title {
-    font-size: 26px;
-    letter-spacing: .14em;
-}
+    .header {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(8, 10, 26, 0.98);
+    }
 
-.subtitle {
-    font-size: 12px;
-    opacity: .7;
-}
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
 
-.mode {
-    display: inline-flex;
-    background: rgba(15,23,42,.9);
-    border-radius: 999px;
-    padding: 4px;
-    border: 1px solid rgba(148,163,184,.4);
-}
+    .title {
+      font-size: 22px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
 
-.mode button {
-    background: none;
-    border: none;
-    color: #cbd5f5;
-    font-size: 11px;
-    padding: 6px 12px;
-    border-radius: 999px;
-    cursor: pointer;
-}
+    .subtitle {
+      font-size: 12px;
+      opacity: .70;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-.mode button.active {
-    background: linear-gradient(135deg,#4f46e5,#06b6d4);
-    color: #fff;
-    box-shadow: 0 0 12px rgba(99,102,241,.7);
-}
+    .status {
+      font-size: 12px;
+      opacity: .70;
+      white-space: nowrap;
+    }
 
-.chat {
-    height: 300px;
-    overflow-y: auto;
-    background: rgba(15,23,42,.9);
-    border-radius: 12px;
-    padding: 10px;
-    border: 1px solid rgba(30,64,175,.5);
-    margin-bottom: 10px;
-}
+    .chat {
+      flex: 1;
+      background: var(--panel);
+      border-top: 1px solid rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      overflow-y: auto;
+      padding: 14px;
+    }
 
-.msg {
-    margin-bottom: 8px;
-    line-height: 1.4;
-}
+    .msg {
+      margin-bottom: 10px;
+      line-height: 1.4;
+      display: flex;
+    }
+    .msg.user { justify-content: flex-end; }
+    .msg.bot { justify-content: flex-start; }
 
-.msg.user { text-align: right; }
+    .bubble {
+      max-width: min(860px, 92%);
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.07);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
 
-.msg span {
-    display: inline-block;
-    padding: 7px 11px;
-    border-radius: 12px;
-    max-width: 90%;
-}
+    .msg.user .bubble { background: var(--user); }
+    .msg.bot .bubble { background: var(--bot); }
 
-.msg.user span {
-    background: linear-gradient(135deg,rgba(59,130,246,.35),rgba(8,47,73,.9));
-}
+    .source {
+      margin-top: 8px;
+      font-size: 11px;
+      opacity: .55;
+    }
+    .source a { color: #9ecbff; text-decoration: none; }
+    .source a:hover { text-decoration: underline; }
 
-.msg.bot span {
-    background: linear-gradient(135deg,rgba(16,185,129,.25),rgba(15,23,42,.95));
-}
+    pre {
+      margin: 10px 0 4px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(15,23,42,.95);
+      border: 1px solid rgba(75,85,99,.7);
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+    }
 
-pre {
-    background: rgba(15,23,42,.95);
-    padding: 8px;
-    border-radius: 8px;
-    overflow-x: auto;
-    margin-top: 6px;
-    border: 1px solid rgba(75,85,99,.8);
-}
+    .composer {
+      padding: 12px;
+      background: rgba(8, 10, 26, 0.98);
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
 
-.input {
-    display: flex;
-    gap: 8px;
-}
+    textarea {
+      flex: 1;
+      resize: none;
+      min-height: 46px;
+      max-height: 220px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,.95);
+      color: var(--text);
+      outline: none;
+      font-size: 14px;
+      line-height: 1.35;
+    }
 
-input {
-    flex: 1;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid rgba(148,163,184,.6);
-    background: rgba(15,23,42,.95);
-    color: #fff;
-    outline: none;
-}
+    textarea::placeholder {
+      color: rgba(148,163,184,.85);
+    }
 
-button.send {
-    padding: 10px 16px;
-    border-radius: 10px;
-    border: none;
-    background: linear-gradient(135deg,#4f46e5,#06b6d4);
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-}
-</style>
+    button {
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: none;
+      background: var(--btn);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform .08s ease, box-shadow .08s ease;
+    }
+    button:hover { box-shadow: 0 0 14px rgba(59,130,246,.6); transform: translateY(-1px); }
+    button:active { transform: translateY(0); box-shadow: none; }
+
+    .hint {
+      padding: 0 12px 12px;
+      font-size: 11px;
+      opacity: .65;
+      background: rgba(8, 10, 26, 0.98);
+    }
+
+    @media (max-width: 620px) {
+      .page { padding: 10px; }
+      .title { font-size: 18px; }
+      .status { display: none; }
+      .chat { padding: 12px; }
+    }
+  </style>
 </head>
-
 <body>
-<div class="app">
+  <div class="page">
+    <div class="app">
+      <div class="header">
+        <div class="brand">
+          <div class="title">ARTIX</div>
+          <div class="subtitle">Ассистент: вопросы + программирование</div>
+        </div>
+        <div class="status" id="status">готов</div>
+      </div>
 
-<div class="header">
-    <div>
-        <div class="title">ARTIX</div>
-        <div class="subtitle">умный ассистент</div>
+      <div class="chat" id="chat"></div>
+
+      <div class="composer">
+        <textarea id="input" placeholder="Напиши сообщение... (Enter = отправить, Shift+Enter = новая строка)"></textarea>
+        <button id="send">Отправить</button>
+      </div>
+
+      <div class="hint">
+        Примеры: “какой сегодня день?”, “что такое переменная?”, “исправь код: x = 10 y = &quot;5&quot; z = x + y”
+      </div>
     </div>
-    <div class="mode">
-        <button id="modeGeneral" class="active">Обычный</button>
-        <button id="modePython">Python</button>
-    </div>
-</div>
-
-<div id="chat" class="chat"></div>
-
-<div class="input">
-    <input id="input" placeholder="Задай вопрос…" />
-    <button class="send" onclick="send()">Отправить</button>
-</div>
-
-</div>
+  </div>
 
 <script>
-const chat = document.getElementById("chat");
-const input = document.getElementById("input");
-const btnGeneral = document.getElementById("modeGeneral");
-const btnPython = document.getElementById("modePython");
+  // ---------------- UI helpers ----------------
+  const chat = document.getElementById("chat");
+  const input = document.getElementById("input");
+  const sendBtn = document.getElementById("send");
+  const statusEl = document.getElementById("status");
 
-let mode = "general";
+  function setStatus(text) { statusEl.textContent = text; }
 
-// ---------------- UI ----------------
-function add(text, from="bot", html=false){
-    const div = document.createElement("div");
-    div.className = "msg " + from;
-    const span = document.createElement("span");
-    html ? span.innerHTML = text : span.textContent = text;
-    div.appendChild(span);
-    chat.appendChild(div);
+  function addMessage(text, role = "bot", source = null) {
+    const msg = document.createElement("div");
+    msg.className = `msg ${role}`;
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.innerHTML = text; // we control content (sanitized where needed)
+
+    if (source && source.url) {
+      const s = document.createElement("div");
+      s.className = "source";
+      s.innerHTML = `источник: <a href="${source.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.label || "link")}</a>`;
+      bubble.appendChild(s);
+    }
+
+    msg.appendChild(bubble);
+    chat.appendChild(msg);
     chat.scrollTop = chat.scrollHeight;
-}
+  }
 
-// ---------------- SYSTEM INTELLIGENCE ----------------
-function systemAnswer(q){
-    q = q.toLowerCase();
-    if(q.includes("какой сегодня день") || q.includes("какая сегодня дата")){
-        return new Date().toLocaleDateString("ru-RU",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  // Auto-resize textarea
+  function autoResize() {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 220) + "px";
+  }
+  input.addEventListener("input", autoResize);
+
+  // Enter to send, Shift+Enter newline
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
-    if(q.includes("который час") || q.includes("сколько времени")){
-        return "Сейчас " + new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+  });
+  sendBtn.addEventListener("click", handleSend);
+
+  // ---------------- Smart local intents ----------------
+  function systemAnswer(q) {
+    const s = q.toLowerCase().trim();
+
+    if (/(какой сегодня день|какая сегодня дата)/.test(s)) {
+      return new Date().toLocaleDateString("ru-RU", {
+        weekday:"long", year:"numeric", month:"long", day:"numeric"
+      }) + ".";
     }
+
+    if (/(который час|сколько времени)/.test(s)) {
+      return "Сейчас " + new Date().toLocaleTimeString("ru-RU", { hour:"2-digit", minute:"2-digit" }) + ".";
+    }
+
+    if (/(привет|здравствуй|хай|hello)/.test(s)) {
+      return "Привет! Могу объяснять понятия и помогать с кодом. Если хочешь — просто вставь свой код и попроси исправить.";
+    }
+
+    if (/(как дела|как ты)/.test(s)) {
+      return "Нормально 🙂 Скидывай задачу или код — разберём.";
+    }
+
+    if (/(спасибо|благодарю)/.test(s)) {
+      return "Пожалуйста!";
+    }
+
     return null;
-}
+  }
 
-// ---------------- WIKIPEDIA ----------------
-async function wiki(query){
-    const s = await fetch(`https://ru.wikipedia.org/w/rest.php/v1/search/title?q=${encodeURIComponent(query)}&limit=1`);
-    const js = await s.json();
-    if(!js.pages || !js.pages.length) return null;
+  // ---------------- Very small programming helper (Python-focused, but single mode) ----------------
+  function looksLikeCodeQuestion(q) {
+    const s = q.toLowerCase();
+    return (
+      s.includes("исправь") ||
+      s.includes("ошибка") ||
+      s.includes("traceback") ||
+      s.includes("syntaxerror") ||
+      s.includes("typeerror") ||
+      s.includes("print(") ||
+      s.includes("=") ||
+      s.includes("def ") ||
+      s.includes("class ")
+    );
+  }
 
-    const title = js.pages[0].title;
-    const sum = await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
-    const data = await sum.json();
+  function fixSimplePython(codeText) {
+    // Heuristic fixes:
+    // 1) if assignments are stuck in one line: "x = 10 y = '5' z = x + y"
+    // 2) if int + str: convert str to int or int to str based on context
+    let s = codeText;
 
-    const text = data.extract?.split(". ").slice(0,4).join(". ") + ".";
-    return `
-<b>${data.title}</b><br><br>
-${text}
-<div style="opacity:.5;font-size:11px;margin-top:4px">
-источник: <a href="${data.content_urls.desktop.page}" target="_blank">Wikipedia</a>
-</div>`;
-}
+    // If user wrote everything in one line separated by spaces, attempt to split at patterns " <name> ="
+    // Example: "x = 10 y = '5' z = x + y print(z) print('done')"
+    s = s.replace(/\s+([a-zA-Z_]\w*)\s*=/g, "\n$1 =");
 
-// ---------------- STACKOVERFLOW ----------------
-async function stack(query){
-    const r = await fetch(`https://api.stackexchange.com/2.3/search/advanced?order=desc&sort=relevance&answers=1&tagged=python&site=stackoverflow&pagesize=1&q=${encodeURIComponent(query)}`);
-    const d = await r.json();
-    if(!d.items || !d.items.length) return null;
+    // Fix common: z = x + y where y is a quoted number
+    // If we see y = "5" and later x + y -> convert y to int(y)
+    const hasYStringNum = /(^|\n)\s*y\s*=\s*["']\d+["']\s*(\n|$)/m.test(s);
+    const hasXNum = /(^|\n)\s*x\s*=\s*\d+\s*(\n|$)/m.test(s);
+    const hasZXY = /(^|\n)\s*z\s*=\s*x\s*\+\s*y\s*(\n|$)/m.test(s);
 
-    const i = d.items[0];
-    return `
-<b>${i.title}</b><br><br>
-Это популярный вопрос по Python. Обычно в таких обсуждениях объясняют причину проблемы и приводят рабочие примеры кода.
-<div style="opacity:.5;font-size:11px;margin-top:4px">
-подробнее: <a href="${i.link}" target="_blank">StackOverflow</a>
-</div>`;
-}
-
-// ---------------- MAIN LOGIC ----------------
-async function send(){
-    const q = input.value.trim();
-    if(!q) return;
-    add(q,"user");
-    input.value = "";
-
-    const sys = systemAnswer(q);
-    if(sys){
-        add(sys);
-        return;
+    if (hasYStringNum && hasXNum && hasZXY) {
+      s = s.replace(/(^|\n)\s*z\s*=\s*x\s*\+\s*y\s*(\n|$)/m, (m, p1, p2) => `${p1}z = x + int(y)${p2}`);
     }
 
-    add("Думаю…","bot");
+    // Ensure prints are on their own line (common)
+    s = s.replace(/\s+print\s*\(/g, "\nprint(");
 
-    let answer = null;
-    if(mode==="general") answer = await wiki(q);
-    else answer = await stack(q);
+    return s.trim();
+  }
 
-    chat.lastChild.remove();
+  function localCodeReply(q) {
+    // Extract code: after "исправь" or raw code lines
+    const raw = q.replace(/^исправь\s*/i, "").trim();
+    if (!raw) return null;
 
-    if(answer) add(answer,"bot",true);
-    else add("Я не смог найти полезную информацию. Попробуй переформулировать вопрос.");
-}
+    const fixed = fixSimplePython(raw);
 
-// ---------------- MODES ----------------
-btnGeneral.onclick = ()=>{
-    mode="general";
-    btnGeneral.classList.add("active");
-    btnPython.classList.remove("active");
-    add("Обычный режим включён. Я объясняю понятия и читаю статьи.","bot");
-};
+    // If nothing changed, still provide a template suggestion
+    const changed = fixed !== raw;
+    const explanation = changed
+      ? "Я разделил выражения по строкам и поправил типы (строка/число) в сложении."
+      : "Я не вижу явной синтаксической ошибки. Если есть traceback — вставь его сюда, и я подскажу, где проблема.";
 
-btnPython.onclick = ()=>{
-    mode="python";
-    btnPython.classList.add("active");
-    btnGeneral.classList.remove("active");
-    add("Python-режим включён. Я ищу решения и объясняю ошибки.","bot");
-};
+    return `
+<b>Возможный фикс:</b>
+<pre><code>${escapeHtml(fixed)}</code></pre>
+<b>Пояснение:</b> ${escapeHtml(explanation)}
+`.trim();
+  }
 
-// start
-add("Привет! Я ARTIX. Задай вопрос или выбери режим Python.","bot");
+  // ---------------- Retrieval: Wikipedia, DuckDuckGo, StackOverflow ----------------
+  function tokenize(text) {
+    return text.toLowerCase().split(/[^a-zA-Zа-яА-Я0-9_]+/u).filter(Boolean);
+  }
+
+  // Wikipedia: search title -> summary (extract)
+  async function fetchWikipediaSummary(query) {
+    const searchUrl = "https://ru.wikipedia.org/w/rest.php/v1/search/title?limit=1&q=" + encodeURIComponent(query);
+    const searchRes = await fetch(searchUrl);
+    if (!searchRes.ok) return null;
+    const searchData = await searchRes.json();
+    if (!searchData.pages || !searchData.pages.length) return null;
+
+    const title = searchData.pages[0].title;
+    const summaryUrl = "https://ru.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title);
+    const sumRes = await fetch(summaryUrl);
+    if (!sumRes.ok) return null;
+    const sum = await sumRes.json();
+
+    if (!sum.extract) return null;
+
+    // Take first ~4 sentences
+    const sentences = sum.extract.split(/(?<=\.)\s+/).slice(0, 4).join(" ");
+    const url = sum.content_urls?.desktop?.page;
+
+    return {
+      text: sentences,
+      title: sum.title,
+      source: { label: "Wikipedia", url }
+    };
+  }
+
+  // DuckDuckGo Instant Answer (via allorigins because direct CORS often blocks)
+  async function fetchDuckDuckGoIA(query) {
+    // DuckDuckGo IA: https://api.duckduckgo.com/?q=...&format=json&no_redirect=1&no_html=1
+    // We'll use allorigins to avoid CORS:
+    const api = "https://api.duckduckgo.com/?format=json&no_redirect=1&no_html=1&q=" + encodeURIComponent(query);
+    const proxied = "https://api.allorigins.win/raw?url=" + encodeURIComponent(api);
+
+    const res = await fetch(proxied);
+    if (!res.ok) return null;
+    const data = await res.json();
+
+    // Prefer AbstractText, then Answer
+    const text = (data.AbstractText || data.Answer || "").trim();
+    const url = (data.AbstractURL || "").trim();
+
+    if (!text) return null;
+    return {
+      text: text.length > 800 ? text.slice(0, 800) + "…" : text,
+      title: data.Heading || "Ответ",
+      source: url ? { label: "DuckDuckGo", url } : null
+    };
+  }
+
+  async function fetchStackOverflow(query) {
+    const apiUrl =
+      "https://api.stackexchange.com/2.3/search/advanced" +
+      "?order=desc&sort=relevance" +
+      "&answers=1" +
+      "&site=stackoverflow" +
+      "&pagesize=1" +
+      "&q=" + encodeURIComponent(query);
+
+    const res = await fetch(apiUrl);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.items || !data.items.length) return null;
+
+    const item = data.items[0];
+    return {
+      text: `Я нашёл похожее обсуждение: “${item.title}”. Обычно там есть разбор причины и варианты исправления.`,
+      title: item.title,
+      source: { label: "StackOverflow", url: item.link }
+    };
+  }
+
+  function formatRetrieved(result) {
+    const title = result.title ? `<b>${escapeHtml(result.title)}</b><br><br>` : "";
+    const body = escapeHtml(result.text || "");
+    return `${title}${body}`;
+  }
+
+  // ---------------- Main send ----------------
+  async function handleSend() {
+    const q = input.value.trim();
+    if (!q) return;
+
+    addMessage(escapeHtml(q), "user");
+    input.value = "";
+    autoResize();
+
+    // 1) Local “smart” answers
+    const sys = systemAnswer(q);
+    if (sys) {
+      addMessage(escapeHtml(sys), "bot");
+      return;
+    }
+
+    // 2) Local code helper (fix python etc.)
+    if (looksLikeCodeQuestion(q)) {
+      const localFix = localCodeReply(q);
+      if (localFix) {
+        addMessage(localFix, "bot");
+        return;
+      }
+    }
+
+    // 3) Web retrieval
+    setStatus("ищу…");
+    addMessage("Ищу информацию…", "bot");
+    const thinkingNode = chat.lastChild;
+
+    try {
+      let best = null;
+
+      // If it looks like programming, try StackOverflow first
+      if (looksLikeCodeQuestion(q)) {
+        best = await fetchStackOverflow(q);
+      }
+
+      // DuckDuckGo IA (if available)
+      if (!best) {
+        best = await fetchDuckDuckGoIA(q);
+      }
+
+      // Wikipedia as fallback (very stable)
+      if (!best) {
+        best = await fetchWikipediaSummary(q);
+      }
+
+      thinkingNode.remove();
+
+      if (best) {
+        addMessage(formatRetrieved(best), "bot", best.source);
+      } else {
+        addMessage("Я не смог найти полезную информацию. Попробуй переформулировать вопрос (или добавь детали/контекст).", "bot");
+      }
+    } catch (e) {
+      thinkingNode.remove();
+      addMessage("Ошибка при обращении к источникам. Проверь интернет и попробуй ещё раз.", "bot");
+    } finally {
+      setStatus("готов");
+    }
+  }
+
+  // Greeting
+  addMessage("Привет! Я ARTIX. Пиши вопросы или вставляй код — попробую помочь и/или найти информацию.", "bot");
 </script>
 </body>
 </html>
