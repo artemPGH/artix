@@ -1,336 +1,220 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ARTIX</title>
-  <style>
-    * { box-sizing: border-box; }
-    :root{
-      --bg1:#050716; --bg2:#020308; --card:rgba(8,10,26,.96);
-      --panel:rgba(15,23,42,.92); --border:rgba(148,163,184,.35);
-      --text:#e5e7eb; --muted:rgba(229,231,235,.65);
-      --user:linear-gradient(135deg,rgba(59,130,246,.35),rgba(8,47,73,.9));
-      --bot:linear-gradient(135deg,rgba(16,185,129,.22),rgba(15,23,42,.95));
-      --btn:linear-gradient(135deg,#4f46e5,#06b6d4);
-    }
-    html,body{height:100%;margin:0;background:radial-gradient(circle at top,var(--bg1),var(--bg2) 60%,#000);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);}
-    .page{height:100%;display:flex;padding:14px;}
-    .app{flex:1;display:flex;flex-direction:column;background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:18px;box-shadow:0 0 40px rgba(0,0,0,.8),0 0 80px rgba(88,166,255,.16);overflow:hidden;min-width:0;}
-    .header{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(8,10,26,.98);}
-    .brand{display:flex;flex-direction:column;gap:2px;min-width:0;}
-    .title{font-size:20px;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;}
-    .subtitle{font-size:12px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .right{display:flex;align-items:center;gap:10px;}
-    .badge{font-size:11px;opacity:.75;border:1px solid rgba(148,163,184,.35);padding:6px 10px;border-radius:999px;background:rgba(15,23,42,.75);}
-    .btn-mini{font-size:11px;border:none;border-radius:999px;padding:7px 10px;background:rgba(15,23,42,.75);color:var(--text);border:1px solid rgba(148,163,184,.35);cursor:pointer;}
-    .btn-mini:hover{border-color:rgba(148,163,184,.6);}
-    .chat{flex:1;background:var(--panel);overflow-y:auto;padding:14px;}
-    .msg{margin-bottom:10px;line-height:1.4;display:flex;}
-    .msg.user{justify-content:flex-end;}
-    .msg.bot{justify-content:flex-start;}
-    .bubble{max-width:min(900px,92%);padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.07);white-space:pre-wrap;word-break:break-word;}
-    .msg.user .bubble{background:var(--user);}
-    .msg.bot .bubble{background:var(--bot);}
-    .meta{margin-top:8px;font-size:11px;opacity:.55;}
-    pre{margin:10px 0 4px;padding:10px 12px;border-radius:12px;background:rgba(15,23,42,.95);border:1px solid rgba(75,85,99,.7);overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;}
-    code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;}
-    .composer{padding:12px;background:rgba(8,10,26,.98);display:flex;gap:10px;align-items:flex-end;border-top:1px solid rgba(255,255,255,.06);}
-    textarea{flex:1;resize:none;min-height:46px;max-height:240px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:rgba(15,23,42,.95);color:var(--text);outline:none;font-size:14px;line-height:1.35;}
-    textarea::placeholder{color:rgba(148,163,184,.85);}
-    .send{padding:10px 16px;border-radius:12px;border:none;background:var(--btn);color:#fff;font-weight:800;cursor:pointer;white-space:nowrap;}
-    .send:hover{box-shadow:0 0 14px rgba(59,130,246,.6);transform:translateY(-1px);}
-    .send:active{transform:translateY(0);box-shadow:none;}
-    .hint{padding:0 12px 12px;font-size:11px;opacity:.65;background:rgba(8,10,26,.98);}
-    @media (max-width:620px){
-      .page{padding:10px;}
-      .title{font-size:18px;}
-      .badge{display:none;}
-      .chat{padding:12px;}
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARTIX</title>
+
+<style>
+*{box-sizing:border-box}
+html,body{
+  margin:0;height:100%;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:radial-gradient(circle at top,#0b1220,#020308 70%);
+  color:#e5e7eb;
+}
+.app{
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  padding:14px;
+}
+.panel{
+  flex:1;
+  background:rgba(8,10,26,.96);
+  border-radius:18px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  box-shadow:0 0 40px rgba(0,0,0,.8);
+}
+.header{
+  padding:14px 18px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  display:flex;
+  justify-content:space-between;
+}
+.title{letter-spacing:.18em;font-weight:700}
+.subtitle{font-size:12px;opacity:.6}
+.status{
+  font-size:12px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(148,163,184,.35);
+}
+.chat{
+  flex:1;
+  padding:16px;
+  overflow-y:auto;
+  background:rgba(15,23,42,.92);
+}
+.msg{margin-bottom:10px;display:flex}
+.msg.user{justify-content:flex-end}
+.msg.bot{justify-content:flex-start}
+.bubble{
+  max-width:90%;
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.08);
+  white-space:pre-wrap;
+}
+.user .bubble{background:linear-gradient(135deg,#2563eb55,#020617)}
+.bot .bubble{background:linear-gradient(135deg,#10b98133,#020617)}
+pre{
+  background:#020617;
+  border:1px solid rgba(148,163,184,.4);
+  padding:12px;
+  border-radius:12px;
+  overflow-x:auto;
+}
+code{font-family:ui-monospace,Consolas,monospace;font-size:13px}
+.input{
+  padding:12px;
+  border-top:1px solid rgba(255,255,255,.06);
+  display:flex;
+  gap:10px;
+}
+textarea{
+  flex:1;
+  min-height:48px;
+  max-height:220px;
+  resize:none;
+  background:#020617;
+  color:#e5e7eb;
+  border:1px solid rgba(148,163,184,.4);
+  border-radius:12px;
+  padding:10px;
+}
+button{
+  background:linear-gradient(135deg,#4f46e5,#06b6d4);
+  border:none;
+  color:#fff;
+  font-weight:700;
+  border-radius:12px;
+  padding:10px 16px;
+  cursor:pointer;
+}
+button:hover{opacity:.9}
+</style>
 </head>
+
 <body>
-  <div class="page">
-    <div class="app">
-      <div class="header">
-        <div class="brand">
-          <div class="title">ARTIX</div>
-          <div class="subtitle">локальный ИИ в браузере (WebGPU) + помощник по коду</div>
-        </div>
-        <div class="right">
-          <div class="badge" id="status">инициализация…</div>
-          <button class="btn-mini" id="clear">Очистить чат</button>
-        </div>
+<div class="app">
+  <div class="panel">
+    <div class="header">
+      <div>
+        <div class="title">ARTIX</div>
+        <div class="subtitle">умный ассистент · код · факты</div>
       </div>
+      <div class="status" id="status">загрузка…</div>
+    </div>
 
-      <div class="chat" id="chat"></div>
+    <div class="chat" id="chat"></div>
 
-      <div class="composer">
-        <textarea id="input" placeholder="Пиши как в ChatGPT. Enter = отправить, Shift+Enter = новая строка"></textarea>
-        <button class="send" id="send">Отправить</button>
-      </div>
-
-      <div class="hint">
-        Примеры: “объясни что такое список в Python”, “исправь код: …”, “напиши функцию факториала”, “что делает len?”.
-      </div>
+    <div class="input">
+      <textarea id="input" placeholder="Пиши вопрос или вставляй код. Enter — отправить, Shift+Enter — новая строка"></textarea>
+      <button id="send">Отправить</button>
     </div>
   </div>
+</div>
 
 <script type="module">
-  // ---------------- UI ----------------
-  const chat = document.getElementById("chat");
-  const input = document.getElementById("input");
-  const sendBtn = document.getElementById("send");
-  const statusEl = document.getElementById("status");
-  const clearBtn = document.getElementById("clear");
+import { pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
 
-  function setStatus(t){ statusEl.textContent = t; }
+const MODEL = "Xenova/Qwen1.5-0.5B-Chat";
 
-  function escapeHtml(str){
-    return String(str).replace(/[&<>"']/g, c => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-    }[c]));
-  }
+const chat = document.getElementById("chat");
+const input = document.getElementById("input");
+const statusEl = document.getElementById("status");
+const sendBtn = document.getElementById("send");
 
-  function addMessage(text, role="bot", meta=null){
-    const msg = document.createElement("div");
-    msg.className = `msg ${role}`;
-    const bubble = document.createElement("div");
-    bubble.className = "bubble";
-    bubble.innerHTML = text;
+function msg(text, role){
+  const d=document.createElement("div");
+  d.className="msg "+role;
+  const b=document.createElement("div");
+  b.className="bubble";
+  b.innerHTML=text;
+  d.appendChild(b);
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+}
 
-    if(meta){
-      const m = document.createElement("div");
-      m.className = "meta";
-      m.textContent = meta;
-      bubble.appendChild(m);
-    }
+function esc(s){
+  return s.replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",
+    '"':"&quot;","'":"&#39;"
+  }[c]));
+}
 
-    msg.appendChild(bubble);
-    chat.appendChild(msg);
-    chat.scrollTop = chat.scrollHeight;
-    return bubble;
-  }
+function auto(){
+  input.style.height="auto";
+  input.style.height=Math.min(input.scrollHeight,220)+"px";
+}
+input.addEventListener("input",auto);
 
-  function autoResize(){
-    input.style.height = "auto";
-    input.style.height = Math.min(input.scrollHeight, 240) + "px";
-  }
-  input.addEventListener("input", autoResize);
+function mathTry(t){
+  const c=t.replace(/×/g,"*").replace(/÷/g,"/").replace(/[^0-9+\-*/(). ]/g,"");
+  if(!c)return null;
+  try{return eval(c)}catch{return null}
+}
 
-  input.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter" && !e.shiftKey){
-      e.preventDefault();
-      handleSend();
-    }
+async function wikiTry(q){
+  try{
+    const r=await fetch("https://ru.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(q));
+    if(!r.ok)return null;
+    const j=await r.json();
+    if(j.extract)return j.extract+"<div style='opacity:.6;font-size:11px'>Источник: Wikipedia</div>";
+  }catch{}
+  return null;
+}
+
+function isCode(t){
+  return /(;|\{|\}|\bdef\b|\bclass\b|System\.out|print\(|function)/.test(t);
+}
+
+let generator;
+statusEl.textContent="загрузка модели…";
+generator = await pipeline("text-generation", MODEL);
+statusEl.textContent="готов";
+
+msg("Привет! Я ARTIX. Пиши вопрос или вставляй код.", "bot");
+
+async function send(){
+  const text=input.value.trim();
+  if(!text)return;
+  input.value="";auto();
+  msg(esc(text),"user");
+
+  const m=mathTry(text);
+  if(m!==null){msg("Ответ: "+m,"bot");return;}
+
+  const w=await wikiTry(text);
+  if(w){msg(w,"bot");return;}
+
+  statusEl.textContent="думаю…";
+
+  const prompt = isCode(text)
+? `Ты программист. Исправь или напиши код. Сначала код, потом краткое объяснение.\n\n${text}\n\nОтвет:`
+: `Ты умный ассистент. Ответь кратко и понятно.\n\nВопрос: ${text}\n\nОтвет:`;
+
+  const out = await generator(prompt,{
+    max_new_tokens:400,
+    temperature:0.6,
+    top_p:0.9,
+    do_sample:true,
+    return_full_text:false
   });
-  sendBtn.addEventListener("click", handleSend);
-  clearBtn.addEventListener("click", ()=>{
-    chat.innerHTML = "";
-    addMessage("Чат очищен. Пиши вопрос или вставляй код.", "bot");
-  });
 
-  // ---------------- Smart local intents (минимум) ----------------
-  function systemAnswer(q){
-    const s = q.toLowerCase().trim();
-    if(/(какой сегодня день|какая сегодня дата)/.test(s)){
-      return new Date().toLocaleDateString("ru-RU",{weekday:"long",year:"numeric",month:"long",day:"numeric"}) + ".";
-    }
-    if(/(который час|сколько времени)/.test(s)){
-      return "Сейчас " + new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}) + ".";
-    }
-    if(/^(привет|здравствуй|хай|hello)\b/.test(s)){
-      return "Привет! Я ARTIX. Могу объяснять и помогать с кодом. Вставляй код целиком и проси: “исправь/объясни/улучши”.";
-    }
-    if(/(как дела|как ты)/.test(s)){
-      return "Нормально 🙂 Кидай задачу или код — разберём.";
-    }
-    return null;
-  }
+  let r = esc(out[0].generated_text || "");
+  r = r.replace(/```([\s\S]*?)```/g,"<pre><code>$1</code></pre>");
+  msg(r || "Не смог ответить. Попробуй уточнить.","bot");
+  statusEl.textContent="готов";
+}
 
-  // ---------------- Worker: локальная LLM через transformers.js ----------------
-  // Важно: всё исполняется в браузере, модель скачивается в кэш.
-  // Модель по умолчанию: Xenova/codegen-350M-mono (маленькая, обычно тянется).
-  // Можно заменить на другую (но чем больше — тем тяжелее).
-  const MODEL_ID = "Xenova/codegen-350M-mono";
-
-  const workerCode = `
-    import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
-
-    env.allowLocalModels = false;
-
-    let generator = null;
-
-    self.onmessage = async (event) => {
-      const { type, payload } = event.data;
-
-      if (type === "init") {
-        try {
-          self.postMessage({ type: "status", payload: "загрузка модели…" });
-          generator = await pipeline("text-generation", payload.modelId, {
-            // device: "webgpu" — transformers.js сам выбирает лучшее, если webgpu доступен
-          });
-          self.postMessage({ type: "ready" });
-        } catch (e) {
-          self.postMessage({ type: "error", payload: String(e) });
-        }
-      }
-
-      if (type === "generate") {
-        if (!generator) {
-          self.postMessage({ type: "error", payload: "Модель не инициализирована" });
-          return;
-        }
-        const { prompt, maxNewTokens, temperature, topP } = payload;
-
-        try {
-          const out = await generator(prompt, {
-            max_new_tokens: maxNewTokens,
-            temperature,
-            top_p: topP,
-            do_sample: true,
-            return_full_text: false
-          });
-
-          const text = out?.[0]?.generated_text ?? "";
-          self.postMessage({ type: "done", payload: text });
-        } catch (e) {
-          self.postMessage({ type: "error", payload: String(e) });
-        }
-      }
-    };
-  `;
-
-  const worker = new Worker(URL.createObjectURL(new Blob([workerCode], { type: "text/javascript" })), { type: "module" });
-
-  let modelReady = false;
-
-  worker.onmessage = (event) => {
-    const { type, payload } = event.data;
-
-    if (type === "status") setStatus(payload);
-    if (type === "ready") {
-      modelReady = true;
-      setStatus("готов (локальная модель)");
-      addMessage("Локальный ИИ загружен. Пиши вопрос или вставляй код.", "bot", `модель: ${MODEL_ID}`);
-    }
-    if (type === "error") {
-      setStatus("ошибка модели");
-      addMessage(
-        `<b>Ошибка загрузки/работы модели</b>\n\n<pre><code>${escapeHtml(payload)}</code></pre>\n\n` +
-        `Попробуй: Chrome/Edge, Ctrl+F5, подожди 1–2 минуты (первый запуск скачивает модель).`,
-        "bot"
-      );
-    }
-    if (type === "done") {
-      if (pendingBubble) {
-        const safe = formatAsAssistant(payload, lastUserText);
-        pendingBubble.innerHTML = safe;
-        pendingBubble = null;
-        setStatus("готов");
-      }
-    }
-  };
-
-  // Init
-  setStatus("инициализация…");
-  addMessage("Загружаю локальную модель… Первый запуск может быть долгим (скачивание в кэш).", "bot");
-  worker.postMessage({ type: "init", payload: { modelId: MODEL_ID } });
-
-  // ---------------- Prompting (делаем “как ассистент”, а не просто генерацию) ----------------
-  function buildPrompt(userText){
-    // Codegen не instruct-модель, поэтому задаём жёсткий формат через “инструкцию”.
-    // Это повышает шанс нормального ответа.
-    const sys =
-`Ты ассистент-программист. Отвечай по-русски.
-Если в сообщении есть код — исправь ошибки и объясни.
-Если просят написать код — напиши решение и кратко объясни.
-Если вопрос общий — ответь кратко и понятно.
-Формат:
-1) Краткий ответ
-2) Код (если нужен) в блоке
-3) Пояснение 1-3 пункта
----`;
-
-    return `${sys}\nПользователь: ${userText}\nАссистент:`;
-  }
-
-  function looksLikeBigCode(text){
-    // грубая эвристика: если очень много строк — предупредим
-    return text.split("\n").length > 400;
-  }
-
-  function formatAsAssistant(generated, originalUser){
-    // Немного приводим к виду “ассистент”
-    // + защищаем HTML
-    const raw = (generated || "").trim();
-    const safe = escapeHtml(raw);
-
-    // Выделяем code fences если модель их дала
-    // (простейший рендер: ```...```)
-    const rendered = safe.replace(/```([\\s\\S]*?)```/g, (m, g1) => {
-      return `<pre><code>${g1}</code></pre>`;
-    });
-
-    // Если модель вообще не дала ничего — fallback
-    if (!rendered) {
-      return "Я не смог сгенерировать ответ. Попробуй уточнить вопрос или добавить контекст/код.";
-    }
-    return rendered;
-  }
-
-  let pendingBubble = null;
-  let lastUserText = "";
-
-  async function handleSend(){
-    const text = input.value.trim();
-    if(!text) return;
-
-    addMessage(escapeHtml(text), "user");
-    input.value = "";
-    autoResize();
-
-    // локальные ответы на простые вопросы
-    const sys = systemAnswer(text);
-    if(sys){
-      addMessage(escapeHtml(sys), "bot");
-      return;
-    }
-
-    if (!modelReady) {
-      addMessage("Модель ещё загружается. Подожди немного и попробуй снова.", "bot");
-      return;
-    }
-
-    if (looksLikeBigCode(text)) {
-      addMessage(
-        "Код очень большой. Браузерная модель не сможет “держать” миллион строк.\n\n" +
-        "Реальный способ: присылай часть (файл/функцию) или скажи, что именно нужно исправить — и я буду работать по кускам.",
-        "bot"
-      );
-      return;
-    }
-
-    setStatus("думаю…");
-    pendingBubble = addMessage("Думаю…", "bot");
-    lastUserText = text;
-
-    const prompt = buildPrompt(text);
-
-    worker.postMessage({
-      type: "generate",
-      payload: {
-        prompt,
-        maxNewTokens: 320,      // можно увеличить, но будет медленнее
-        temperature: 0.7,
-        topP: 0.9
-      }
-    });
-  }
-
-  // initial message if model fails to load
-  addMessage("Подсказка: если модель не грузится — открой сайт в Chrome/Edge и обнови Ctrl+F5.", "bot", "WebGPU предпочтительно");
+sendBtn.onclick=send;
+input.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}
+});
 </script>
 </body>
 </html>
