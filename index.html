@@ -41,7 +41,7 @@
     <div class="header">
       <div class="left">
         <div class="title">ARTIX</div>
-        <div class="subtitle">умный ассистент · код · факты · погода</div>
+        <div class="subtitle">ассистент · код · факты · погода</div>
       </div>
       <div class="tools">
         <div class="status" id="status">загрузка…</div>
@@ -61,8 +61,6 @@
 <script type="module">
   import { pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
 
-  // Маленькая chat-модель. В браузере это компромисс.
-  // Если захочешь — дам список альтернатив под твоё железо.
   const MODEL = "Xenova/Qwen1.5-0.5B-Chat";
 
   const chat = document.getElementById("chat");
@@ -85,14 +83,12 @@
     const b=document.createElement("div");
     b.className="bubble";
     b.innerHTML=text;
-
     if(meta){
       const m=document.createElement("div");
       m.className="meta";
       m.innerHTML=meta;
       b.appendChild(m);
     }
-
     d.appendChild(b);
     chat.appendChild(d);
     chat.scrollTop=chat.scrollHeight;
@@ -104,7 +100,6 @@
     input.style.height=Math.min(input.scrollHeight,220)+"px";
   }
   input.addEventListener("input", autoResize);
-
   input.addEventListener("keydown", (e)=>{
     if(e.key==="Enter" && !e.shiftKey){
       e.preventDefault();
@@ -118,194 +113,121 @@
     msg("Чат очищен. Пиши вопрос или вставляй код.", "bot");
   };
 
-  // ---------------- 1) Локальные ответы (чтобы не зависеть от ИИ) ----------------
-  function isTomorrowQuestion(s){
-    return /(какой завтра день|какая завтра дата|какое завтра число)/.test(s);
-  }
-
-  function datePlusDays(days){
-    const d = new Date();
-    d.setDate(d.getDate() + days);
-    return d;
-  }
-
-  function formatDateRU(d){
-    return d.toLocaleDateString("ru-RU",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
-  }
+  // ---------- Локальные ответы ----------
+  function datePlusDays(days){ const d=new Date(); d.setDate(d.getDate()+days); return d; }
+  function formatDateRU(d){ return d.toLocaleDateString("ru-RU",{weekday:"long",year:"numeric",month:"long",day:"numeric"}); }
 
   function systemAnswer(q){
     const s=q.toLowerCase().trim();
 
-    if(/^(привет|здравствуй|хай|hello)\b/.test(s))
-      return "Привет! Пиши вопрос или вставляй код — помогу.";
+    if(/^(привет|здравствуй|хай|hello)\b/.test(s)) return "Привет! 🙂 Чем помочь?";
+    if(/(как дела|как ты)/.test(s)) return "Нормально 🙂 Что делаем?";
+    if(/(давай пообщаемся|поболтаем)/.test(s)) return "Ок 🙂 О чём поговорим?";
+    if(/(спасибо|благодарю)/.test(s)) return "Пожалуйста!";
 
-    if(/(как дела|как ты)/.test(s))
-      return "Нормально 🙂 Кидай задачу или код — разберём.";
-
-    if(/(спасибо|благодарю)/.test(s))
-      return "Пожалуйста!";
-
-    if(/(какой сегодня день|какая сегодня дата)/.test(s)){
-      return formatDateRU(new Date()) + ".";
-    }
-
-    if(isTomorrowQuestion(s)){
-      return "Завтра: " + formatDateRU(datePlusDays(1)) + ".";
-    }
-
-    if(/(который час|сколько времени|какое время)/.test(s)){
-      return "Сейчас " + new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}) + ".";
-    }
+    if(/(какой сегодня день|какая сегодня дата)/.test(s)) return formatDateRU(new Date()) + ".";
+    if(/(какой завтра день|какая завтра дата|какое завтра число)/.test(s)) return "Завтра: " + formatDateRU(datePlusDays(1)) + ".";
+    if(/(который час|сколько времени|какое время)/.test(s)) return "Сейчас " + new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}) + ".";
 
     return null;
   }
 
-  // ---------------- 2) Математика (без undefined) ----------------
+  // ---------- Математика (строго number|null) ----------
   function mathTry(text){
-    const clean = text
-      .replace(/×/g,"*")
-      .replace(/÷/g,"/")
-      .replace(/[^0-9+\-*/(). ]/g,"")
-      .trim();
-
+    const clean = text.replace(/×/g,"*").replace(/÷/g,"/").replace(/[^0-9+\-*/(). ]/g,"").trim();
     if(!clean) return null;
     if(!/^[0-9+\-*/(). ]+$/.test(clean)) return null;
-
     try{
-      const result = eval(clean);
-      if(typeof result === "number" && isFinite(result)) return result;
+      const r = eval(clean);
+      if(typeof r==="number" && isFinite(r)) return r;
     }catch{}
     return null;
   }
 
-  // ---------------- 3) Детектор кода ----------------
+  // ---------- Детектор кода ----------
   function isCode(text){
-    const t=text;
-    return (
-      /```/.test(t) ||
-      /;|\{|\}|\bdef\b|\bclass\b|\bimport\b|System\.out|console\.log|print\(|function\b/.test(t) ||
-      /Traceback|SyntaxError|TypeError|ReferenceError|Exception/.test(t)
-    );
+    return /```|;|\{|\}|\bdef\b|\bclass\b|\bimport\b|System\.out|console\.log|print\(|function\b|Traceback|SyntaxError|TypeError|ReferenceError|Exception/.test(text);
   }
 
-  // ---------------- 4) Мини-база по Python (чтобы “писал код” стабильно) ----------------
+  // ---------- Мини-база Python ----------
   function pythonKB(q){
     const s=q.toLowerCase();
-
-    // таймер в консоли
-    if (/(таймер).*(python|пайтон)/.test(s) || /(python|пайтон).*(таймер)/.test(s)) {
+    if ((/(таймер).*(python|пайтон)/.test(s) || /(python|пайтон).*(таймер)/.test(s))) {
       return {
         html: `
 <b>Таймер в консоли (обратный отсчёт):</b>
 <pre><code>import time
 
-seconds = 10  # сколько секунд ждать
+seconds = 10
 
 for i in range(seconds, 0, -1):
     print(f"Осталось: {i} сек", end="\\r")
     time.sleep(1)
 
-print("Готово!          ")</code></pre>
-
-<b>Таймер + ввод минут/секунд:</b>
-<pre><code>import time
-
-minutes = int(input("Минут: "))
-seconds = int(input("Секунд: "))
-total = minutes * 60 + seconds
-
-for left in range(total, 0, -1):
-    m, s = divmod(left, 60)
-    print(f"{m:02d}:{s:02d}", end="\\r")
-    time.sleep(1)
-
-print("00:00\\nГотово!")</code></pre>
-`,
+print("Готово!          ")</code></pre>`,
         meta: "Локальная база: Python"
       };
     }
-
-    // что делает len
-    if (/(что делает|как работает).*\blen\b/.test(s) || /\blen\(\)\b/.test(s)) {
+    if (/(калькулятор).*(python|пайтон)/.test(s) || /(python|пайтон).*(калькулятор)/.test(s)) {
       return {
         html: `
-<b>len(x)</b> возвращает длину объекта:
-<pre><code>len("abc")      # 3
-len([1,2,3,4])  # 4
-len({"a": 1})   # 1</code></pre>
-Работает для строк, списков, словарей, множеств и т.д.`,
+<b>Простой калькулятор в консоли:</b>
+<pre><code>def calc(expr: str) -> float:
+    allowed = set("0123456789+-*/(). ")
+    if any(ch not in allowed for ch in expr):
+        raise ValueError("Недопустимые символы")
+    return eval(expr)
+
+while True:
+    expr = input("Введите выражение (или 'exit'): ")
+    if expr.lower() == "exit":
+        break
+    try:
+        print(calc(expr))
+    except Exception as e:
+        print("Ошибка:", e)</code></pre>`,
         meta: "Локальная база: Python"
       };
     }
-
-    // факториал
-    if (/факториал/.test(s)) {
-      return {
-        html: `
-<b>Факториал (n!)</b>
-<pre><code>def factorial(n: int) -> int:
-    if n &lt; 0:
-        raise ValueError("n должен быть &gt;= 0")
-    result = 1
-    for i in range(2, n + 1):
-        result *= i
-    return result
-
-print(factorial(5))  # 120</code></pre>`,
-        meta: "Локальная база: Python"
-      };
-    }
-
     return null;
   }
 
-  // ---------------- 5) Погода бесплатно (Open-Meteo, без ключей) ----------------
-  function isWeatherQuestion(q){
-    const s=q.toLowerCase();
-    return /погода/.test(s);
-  }
-  function isTomorrowWeather(q){
-    const s=q.toLowerCase();
-    return /завтра/.test(s);
-  }
+  // ---------- Погода бесплатно (Open-Meteo, без ключей) ----------
+  function isWeatherQuestion(q){ return /погода/.test(q.toLowerCase()); }
+  function isTomorrowWeather(q){ return /завтра/.test(q.toLowerCase()); }
 
   async function getCoords(){
-    // попробуем геолокацию браузера
     return await new Promise((resolve) => {
       if (!navigator.geolocation) return resolve(null);
       navigator.geolocation.getCurrentPosition(
         (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
         () => resolve(null),
-        { enableHighAccuracy: false, timeout: 5000 }
+        { enableHighAccuracy:false, timeout:5000 }
       );
     });
   }
 
   async function fetchWeatherByCoords(lat, lon){
-    // Daily forecast: max/min + precipitation probability
     const url =
       "https://api.open-meteo.com/v1/forecast" +
       `?latitude=${encodeURIComponent(lat)}` +
       `&longitude=${encodeURIComponent(lon)}` +
       "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
       "&timezone=auto";
-
     const r = await fetch(url);
     if(!r.ok) return null;
     const j = await r.json();
-    if(!j.daily || !j.daily.time) return null;
+    if(!j.daily?.time?.length) return null;
     return j;
   }
 
-  function renderTomorrowWeather(j){
-    const idx = 1; // завтра
+  function renderDailyWeather(j, idx, label){
     const date = j.daily.time[idx];
     const tMax = j.daily.temperature_2m_max[idx];
     const tMin = j.daily.temperature_2m_min[idx];
     const p = j.daily.precipitation_probability_max[idx];
-
     return `
-<b>Погода на завтра (${esc(date)}):</b>
+<b>${esc(label)} (${esc(date)}):</b><br>
 • Температура: ${esc(String(tMin))}…${esc(String(tMax))} °C<br>
 • Вероятность осадков: ${esc(String(p ?? "—"))}%<br>
 <div class="meta">Источник: Open-Meteo (бесплатно, без ключей)</div>
@@ -314,46 +236,21 @@ print(factorial(5))  # 120</code></pre>`,
 
   async function weatherTry(q){
     if(!isWeatherQuestion(q)) return null;
-
     const coords = await getCoords();
     if(!coords){
-      return {
-        html: "Чтобы сказать погоду, мне нужна геолокация (разреши доступ в браузере) или напиши город, например: <b>“погода завтра в Минске”</b>.",
-        meta: null
-      };
+      return { html: "Чтобы сказать погоду, разреши геолокацию в браузере или спроси так: <b>“погода завтра (в твоём городе)”</b>.", meta:null };
     }
-
     const data = await fetchWeatherByCoords(coords.lat, coords.lon);
-    if(!data) return { html: "Не смог получить прогноз. Проверь интернет и попробуй ещё раз.", meta: null };
-
-    if(isTomorrowWeather(q)){
-      return { html: renderTomorrowWeather(data), meta: null };
-    }
-
-    // если без “завтра” — покажем сегодня
-    const idx = 0;
-    const date = data.daily.time[idx];
-    const tMax = data.daily.temperature_2m_max[idx];
-    const tMin = data.daily.temperature_2m_min[idx];
-    const p = data.daily.precipitation_probability_max[idx];
-
-    return {
-      html: `
-<b>Погода на сегодня (${esc(date)}):</b>
-• Температура: ${esc(String(tMin))}…${esc(String(tMax))} °C<br>
-• Вероятность осадков: ${esc(String(p ?? "—"))}%<br>
-<div class="meta">Источник: Open-Meteo (бесплатно, без ключей)</div>
-`.trim(),
-      meta: null
-    };
+    if(!data) return { html: "Не смог получить прогноз. Проверь интернет и попробуй ещё раз.", meta:null };
+    if(isTomorrowWeather(q)) return { html: renderDailyWeather(data, 1, "Погода на завтра"), meta:null };
+    return { html: renderDailyWeather(data, 0, "Погода на сегодня"), meta:null };
   }
 
-  // ---------------- 6) Wikipedia fallback (строже) ----------------
-  const WIKI_STOP = new Set(["ало","ала","ага","ок","ok","лол","хаха","привет","hi","hello","test","тест","день"]);
+  // ---------- Wikipedia: сначала поиск (opensearch) -> потом summary по title ----------
+  const WIKI_STOP = new Set(["ало","ала","ага","ок","ok","лол","хаха","привет","hi","hello","test","тест"]);
   function isWikiCandidate(q){
     const s=q.trim().toLowerCase();
-    if(s.length < 8) return false;              // короткое — не вики
-    if(!s.includes(" ") && s.length < 12) return false; // одно слово короткое — не вики
+    if(s.length < 4) return false;
     if(WIKI_STOP.has(s)) return false;
     if(/^[0-9+\-*/(). ×÷]+$/.test(s)) return false;
     if(isCode(q)) return false;
@@ -361,18 +258,50 @@ print(factorial(5))  # 120</code></pre>`,
     return true;
   }
 
+  function stripQuestionPrefix(q){
+    // чтобы “что такое raspberry pi?” искалось как “raspberry pi”
+    return q
+      .replace(/^\s*(что такое|кто такой|кто такая|кто такие|что значит|объясни(,)? что такое)\s+/i, "")
+      .replace(/\?+$/,"")
+      .trim();
+  }
+
+  async function wikiSearchTitle(q){
+    const query = stripQuestionPrefix(q);
+    const url = "https://ru.wikipedia.org/w/api.php" +
+      "?action=opensearch&limit=1&namespace=0&format=json&origin=*" +
+      "&search=" + encodeURIComponent(query);
+
+    const r = await fetch(url);
+    if(!r.ok) return null;
+    const j = await r.json(); // [search, [titles], [descriptions], [links]]
+    const title = j?.[1]?.[0];
+    const link  = j?.[3]?.[0];
+    if(!title) return null;
+    return { title, link };
+  }
+
+  async function wikiSummaryByTitle(title){
+    const url = "https://ru.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title);
+    const r = await fetch(url);
+    if(!r.ok) return null;
+    const j = await r.json();
+    if(!j.extract) return null;
+    return j;
+  }
+
   async function wikiTry(q){
     if(!isWikiCandidate(q)) return null;
 
     try{
-      const url="https://ru.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(q);
-      const r=await fetch(url);
-      if(!r.ok) return null;
-      const j=await r.json();
-      if(!j.extract) return null;
+      const found = await wikiSearchTitle(q);
+      if(!found) return null;
 
-      const text = j.extract.split(/(?<=\.)\s+/).slice(0,4).join(" ");
-      const link = j.content_urls?.desktop?.page;
+      const sum = await wikiSummaryByTitle(found.title);
+      if(!sum) return null;
+
+      const text = sum.extract.split(/(?<=\.)\s+/).slice(0,4).join(" ");
+      const link = sum.content_urls?.desktop?.page || found.link;
 
       return {
         html: esc(text),
@@ -383,7 +312,7 @@ print(factorial(5))  # 120</code></pre>`,
     }
   }
 
-  // ---------------- 7) LLM (последний слой “интеллекта”) ----------------
+  // ---------- LLM ----------
   let generator = null;
 
   setStatus("загрузка модели…");
@@ -395,33 +324,26 @@ print(factorial(5))  # 120</code></pre>`,
     msg("Готово. Пиши вопрос или вставляй код.", "bot", `Модель: <b>${esc(MODEL)}</b>`);
   }catch(e){
     setStatus("ошибка модели");
-    msg(`<b>Не удалось загрузить модель</b>\n\n<pre><code>${esc(String(e))}</code></pre>\n\nОткрой сайт в Chrome/Edge и обнови Ctrl+F5.`, "bot");
+    msg(`<b>Не удалось загрузить модель</b><pre><code>${esc(String(e))}</code></pre>`, "bot");
   }
 
   function buildPrompt(userText){
-    // Жёсткий, чтобы модель не “сдавалась”
     if(isCode(userText)){
       return [
         "Ты опытный программист-ассистент.",
-        "Не пиши 'не могу'. Всегда предлагай решение или план.",
-        "Формат строго:",
-        "1) Решение (код) в ``` ```",
-        "2) Пояснение 1-5 пунктов",
-        "Если не хватает данных — задай 1 вопрос.",
+        "Всегда предлагай решение. Формат:",
+        "```<код>```",
+        "Пояснение 1-5 пунктов.",
         "",
-        "Запрос:",
         userText,
         "",
         "Ответ:"
       ].join("\n");
     }
-
     return [
       "Ты умный ассистент.",
-      "Отвечай по-русски. Кратко, конкретно.",
-      "Не пиши 'не смог'. Если вопрос общий — дай общий ответ + пример.",
+      "Отвечай по-русски. Кратко, но полезно. Если вопрос общий — дай пример.",
       "",
-      "Вопрос:",
       userText,
       "",
       "Ответ:"
@@ -431,20 +353,22 @@ print(factorial(5))  # 120</code></pre>`,
   function renderLLM(text){
     const safe = esc(text || "").trim();
     if(!safe) return null;
-
-    // Фильтр “сдался” / пустые отписки
-    const lower = safe.toLowerCase();
-    const gaveUp = (
-      lower.includes("не смог") ||
-      lower.includes("не могу") ||
-      lower.includes("уточнить вопрос") && safe.length < 80
-    );
-    if(gaveUp) return null;
-
     return safe.replace(/```([\s\S]*?)```/g, (m,g1)=>`<pre><code>${g1}</code></pre>`);
   }
 
-  // ---------------- send() с правильными приоритетами ----------------
+  function looksUselessAnswer(ans){
+    const s = (ans||"").toLowerCase();
+    // если модель реально “сдалась” — попробуем wiki
+    return (
+      s.includes("не знаю") ||
+      s.includes("не уверен") ||
+      s.includes("не могу") ||
+      s.includes("не смог") ||
+      s.length < 20
+    );
+  }
+
+  // ---------- send() ----------
   async function send(){
     const text=input.value.trim();
     if(!text) return;
@@ -454,73 +378,67 @@ print(factorial(5))  # 120</code></pre>`,
 
     // 1) математика
     const m = mathTry(text);
-    if(m !== null){
-      msg("Ответ: " + esc(String(m)), "bot");
-      return;
-    }
+    if(m !== null){ msg("Ответ: " + esc(String(m)), "bot"); return; }
 
-    // 2) локальные ответы
+    // 2) системные
     const sys = systemAnswer(text);
-    if(sys){
-      msg(esc(sys), "bot");
-      return;
-    }
+    if(sys){ msg(esc(sys), "bot"); return; }
 
-    // 3) погода (бесплатно)
-    const w = await weatherTry(text);
-    if(w){
-      msg(w.html, "bot", w.meta);
-      return;
-    }
+    // 3) погода
+    const weather = await weatherTry(text);
+    if(weather){ msg(weather.html, "bot", weather.meta); return; }
 
-    // 4) мини-база Python
+    // 4) python kb
     const py = pythonKB(text);
-    if(py){
-      msg(py.html, "bot", py.meta);
-      return;
-    }
+    if(py){ msg(py.html, "bot", py.meta); return; }
 
     // 5) LLM
+    let llmRendered = null;
+    let llmRaw = null;
+
     if(generator){
       setStatus("думаю…");
       const thinking = msg("Думаю…", "bot");
-
       try{
         const prompt = buildPrompt(text);
-
         const out = await generator(prompt,{
           max_new_tokens: 520,
-          temperature: 0.55,
+          temperature: 0.6,
           top_p: 0.9,
           do_sample: true,
           return_full_text: false
         });
-
-        const gen = out?.[0]?.generated_text ?? "";
-        const rendered = renderLLM(gen);
-
-        thinking.parentElement.remove();
-        setStatus("готов");
-
-        if(rendered){
-          msg(rendered, "bot");
-          return;
-        }
+        llmRaw = out?.[0]?.generated_text ?? "";
+        llmRendered = renderLLM(llmRaw);
       }catch(e){
+        llmRendered = `Ошибка генерации: <pre><code>${esc(String(e))}</code></pre>`;
+      }finally{
         thinking.parentElement.remove();
         setStatus("готов");
-        msg(`Ошибка генерации: <pre><code>${esc(String(e))}</code></pre>`, "bot");
       }
     }
 
-    // 6) Wikipedia fallback
+    // Если LLM дал норм ответ — показываем
+    if(llmRendered && !looksUselessAnswer(llmRaw)){
+      msg(llmRendered, "bot");
+      return;
+    }
+
+    // 6) Wikipedia (поиск+summary) — сильный универсальный fallback
     const wiki = await wikiTry(text);
     if(wiki){
+      // Если LLM был слабый — покажем коротко, но с источником
       msg(wiki.html, "bot", wiki.meta);
       return;
     }
 
-    msg("Я не смог уверенно ответить. Спроси иначе или добавь деталей.", "bot");
+    // 7) Если совсем ничего — всё равно покажем LLM что было (чтобы не “молчал”)
+    if(llmRendered){
+      msg(llmRendered, "bot");
+      return;
+    }
+
+    msg("Не получилось получить ответ (нет интернета/источники недоступны). Попробуй ещё раз.", "bot");
   }
 </script>
 </body>
