@@ -1,171 +1,38 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARTIX</title>
-
-<style>
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#0b1220,#020308 70%);color:#e5e7eb}
-.app{height:100%;display:flex;padding:12px}
-.panel{flex:1;background:rgba(8,10,26,.96);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.8)}
-.header{padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center}
-.title{letter-spacing:.18em;font-weight:900;text-transform:uppercase}
-.subtitle{font-size:12px;opacity:.6}
-.status{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid rgba(148,163,184,.35)}
-.chat{flex:1;padding:16px;overflow-y:auto;background:rgba(15,23,42,.92)}
-.msg{margin-bottom:12px;display:flex}
-.msg.user{justify-content:flex-end}
-.msg.bot{justify-content:flex-start}
-.bubble{max-width:92%;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.08);white-space:pre-wrap}
-.user .bubble{background:linear-gradient(135deg,#2563eb55,#020617)}
-.bot .bubble{background:linear-gradient(135deg,#10b98133,#020617)}
-.meta{margin-top:8px;font-size:11px;opacity:.65}
-pre{background:#020617;border:1px solid rgba(148,163,184,.35);padding:12px;border-radius:12px;overflow-x:auto;margin-top:10px}
-code{font-family:ui-monospace,Consolas,monospace;font-size:13px}
-.input{padding:12px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:10px;align-items:flex-end}
-textarea{flex:1;min-height:48px;max-height:260px;resize:none;background:#020617;color:#e5e7eb;border:1px solid rgba(148,163,184,.4);border-radius:12px;padding:10px;outline:none}
-button{background:linear-gradient(135deg,#4f46e5,#06b6d4);border:none;color:#fff;font-weight:900;border-radius:12px;padding:10px 16px;cursor:pointer}
-button:hover{opacity:.9}
-.tools{display:flex;gap:8px}
-.btn-mini{background:rgba(2,6,23,.25);border:1px solid rgba(148,163,184,.25);padding:6px 10px;border-radius:999px}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ARTIX</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
-<div class="app">
-  <div class="panel">
-    <div class="header">
-      <div>
-        <div class="title">ARTIX</div>
-        <div class="subtitle">ассистент · код · факты · веб-поиск</div>
-      </div>
-      <div class="tools">
-        <div class="status" id="status">загрузка…</div>
-        <button class="btn-mini" id="clear">Очистить</button>
-      </div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">ARTIX</div>
+      <div class="tag">ассистент • код • факты • веб-поиск</div>
     </div>
-
-    <div class="chat" id="chat"></div>
-
-    <div class="input">
-      <textarea id="input" placeholder="Пиши вопрос или вставляй код. Enter — отправить, Shift+Enter — новая строка"></textarea>
-      <button id="send">Отправить</button>
+    <div class="status">
+      <span id="statusDot" class="dot"></span>
+      <span id="statusText">готов</span>
+      <button id="btnClear" class="btn ghost">Очистить</button>
     </div>
-  </div>
-</div>
+  </header>
 
-<script type="module">
-import { pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
+  <main class="layout">
+    <section id="chat" class="chat" aria-live="polite"></section>
 
-const WORKER_URL = "https://artix-search.facts-com99.workers.dev";
-const MODEL = "Xenova/Qwen1.5-0.5B-Chat";
+    <footer class="composer">
+      <div class="composerInner">
+        <textarea id="input" rows="1" placeholder="Пиши вопрос или вставляй код… (Enter — отправить, Shift+Enter — новая строка)"></textarea>
+        <button id="btnSend" class="btn primary">Отправить</button>
+      </div>
+      <div class="hint">
+        Источники показываются компактно в конце ответа.
+      </div>
+    </footer>
+  </main>
 
-const chat = document.getElementById("chat");
-const input = document.getElementById("input");
-const statusEl = document.getElementById("status");
-
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
-function msg(text, role="bot", meta=null){
-  const d=document.createElement("div"); d.className="msg "+role;
-  const b=document.createElement("div"); b.className="bubble"; b.innerHTML=text;
-  if(meta){const m=document.createElement("div"); m.className="meta"; m.innerHTML=meta; b.appendChild(m)}
-  d.appendChild(b); chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
-}
-function setStatus(t){statusEl.textContent=t}
-
-function autoResize(){
-  input.style.height="auto";
-  input.style.height=Math.min(input.scrollHeight,260)+"px";
-}
-input.addEventListener("input",autoResize);
-input.addEventListener("keydown",e=>{
-  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}
-});
-document.getElementById("send").onclick=send;
-document.getElementById("clear").onclick=()=>{chat.innerHTML="";msg("Чат очищен. Пиши любой вопрос.","bot")};
-
-function mathTry(t){
-  const c=t.replace(/×/g,"*").replace(/÷/g,"/").replace(/[^0-9+\-*/(). ]/g,"").trim();
-  if(!c) return null;
-  try{const r=eval(c); if(typeof r==="number"&&isFinite(r)) return r}catch{}
-  return null;
-}
-
-async function webSearch(q){
-  const r=await fetch(`${WORKER_URL}/api/search?q=${encodeURIComponent(q)}&k=4&lang=ru`);
-  if(!r.ok) return [];
-  const j=await r.json();
-  return j.results||[];
-}
-
-function buildPrompt(q,sources){
-  const ctx=sources.map((s,i)=>`SOURCE ${i+1}\n${s.title}\n${s.text}`).join("\n\n");
-  return `Ты умный ассистент ARTIX.
-Отвечай по-русски, понятно и по делу.
-Если вопрос про код — приводи рабочие примеры.
-Используй информацию из источников, если они есть.
-
-ВОПРОС:
-${q}
-
-ИСТОЧНИКИ:
-${ctx}
-
-ОТВЕТ:`;
-}
-
-function renderSources(sources){
-  if(!sources.length) return null;
-  return "Источники: "+sources.map(s=>`<a href="${s.url}" target="_blank">${esc(s.title)}</a>`).join(" · ");
-}
-
-let generator=null;
-
-setStatus("загрузка модели…");
-msg("Загружаю модель. Первый запуск может быть долгим.","bot");
-
-generator = await pipeline("text-generation", MODEL);
-setStatus("готов");
-msg("Готово. Пиши вопрос или вставляй код.","bot",`Модель: ${MODEL}`);
-
-async function send(){
-  const text=input.value.trim();
-  if(!text) return;
-  input.value=""; autoResize();
-  msg(esc(text),"user");
-
-  const m=mathTry(text);
-  if(m!==null){msg("Ответ: "+m,"bot");return}
-
-  setStatus("поиск…");
-  let sources=[];
-  try{sources=await webSearch(text)}catch{}
-  setStatus("думаю…");
-
-  let thinkingShown=true;
-  msg("Думаю…","bot");
-
-  let answer="";
-  try{
-    const prompt=buildPrompt(text,sources);
-    const out=await generator(prompt,{max_new_tokens:520,temperature:0.6,top_p:0.9,do_sample:true,return_full_text:false});
-    answer=out?.[0]?.generated_text||"";
-  }catch(e){
-    answer="Ошибка генерации: "+e;
-  }
-
-  chat.lastChild.remove(); // убрать "Думаю…"
-  setStatus("готов");
-
-  if(answer.trim()){
-    const html=esc(answer).replace(/```([\s\S]*?)```/g,"<pre><code>$1</code></pre>");
-    msg(html,"bot",renderSources(sources));
-  }else{
-    msg("Не смог получить ответ. Попробуй переформулировать вопрос.","bot");
-  }
-}
-</script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
