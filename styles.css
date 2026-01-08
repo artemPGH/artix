@@ -161,3 +161,11 @@ textarea:focus{
 }
 
 .hint{margin-top:8px; font-size:12px; color:var(--muted)}
+
+/* status dot states */
+.dot { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
+
+.dot.busy { background: #f5c542; }  /* жёлтый */
+.dot.err  { background: #ff4d4d; }  /* красный */
+.dot.web  { background: #3bd16f; }  /* зелёный (web-поиск) */
+.dot.ok   { background: #3bd16f; }  /* если используешь "ok" */
