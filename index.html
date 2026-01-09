@@ -4,35 +4,32 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ARTIX</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="logo">ARTIX</div>
-      <div class="tag">ассистент • код • факты • веб-поиск</div>
+      <div class="brand-name">ARTIX</div>
+      <div class="brand-sub">ассистент · код · факты · веб-поиск</div>
     </div>
+
     <div class="status">
-      <span id="statusDot" class="dot"></span>
-      <span id="statusText">готов</span>
-      <button id="btnClear" class="btn ghost">Очистить</button>
+      <span id="statusDot" class="dot ok"></span>
+      <span id="statusText" class="status-text">готов</span>
+      <button id="clearBtn" class="btn ghost" type="button">Очистить</button>
     </div>
   </header>
 
   <main class="layout">
-    <section id="chat" class="chat" aria-live="polite"></section>
+    <section id="chat" class="chat"></section>
 
     <footer class="composer">
-      <div class="composerInner">
-        <textarea id="input" rows="1" placeholder="Пиши вопрос или вставляй код… (Enter — отправить, Shift+Enter — новая строка)"></textarea>
-        <button id="btnSend" class="btn primary">Отправить</button>
-      </div>
-      <div class="hint">
-        Источники показываются компактно в конце ответа.
-      </div>
+      <textarea id="input" class="input" rows="1"
+        placeholder="Пиши вопрос или вставляй код… (Enter — отправить, Shift+Enter — новая строка)"></textarea>
+      <button id="sendBtn" class="btn primary" type="button">Отправить</button>
     </footer>
   </main>
 
-  <script type="module" src="app.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
