@@ -1,248 +1,182 @@
-// ====== CONFIG ======
+/**
+ * ARTIX minimal client
+ * - Web search via Cloudflare Worker:
+ *   https://artix-search.facts-com99.workers.dev/api/search?q=...
+ * - Local model stub (runLocalModel) — заменишь на свой OrtRun
+ *
+ * IMPORTANT:
+ * - никакого "fallback" в UI
+ * - статус:
+ *   ok    => локальная модель ответила
+ *   web   => локальная модель упала, но web дал результаты
+ *   err   => всё упало / результатов нет
+ */
+
 const WORKER_BASE = "https://artix-search.facts-com99.workers.dev";
-const SEARCH_ENDPOINT = `${WORKER_BASE}/api/search`;
 
-// Локальная модель через transformers.js (если уже подключал раньше)
-// Если у тебя сейчас из-за неё падает OrtRun — мы не ломаем чат: будет fallback.
-import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2";
-
-env.allowLocalModels = false;
-env.useBrowserCache = true;
-
-// Важно: без crossOriginIsolated нет SharedArrayBuffer -> ставим 1 поток
-env.backends.onnx.wasm.numThreads = (globalThis.crossOriginIsolated ? 2 : 1);
-
-let generatorPromise = null;
+const chatEl = document.getElementById("chat");
+const inputEl = document.getElementById("input");
+const sendBtn = document.getElementById("sendBtn");
+const clearBtn = document.getElementById("clearBtn");
 
 function setStatus(kind, text) {
   const dot = document.getElementById("statusDot");
   const label = document.getElementById("statusText");
-  dot.classList.remove("busy", "err");
+  if (!dot || !label) return;
+
+  dot.classList.remove("busy", "err", "web", "ok");
+
   if (kind === "busy") dot.classList.add("busy");
-  if (kind === "err") dot.classList.add("err");
-  label.textContent = text;
+  else if (kind === "err") dot.classList.add("err");
+  else if (kind === "web") dot.classList.add("web");
+  else dot.classList.add("ok");
+
+  label.textContent = text || "";
 }
 
 function escapeHtml(s) {
-  return String(s || "")
+  return String(s)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
 }
 
-// очень простая разметка: если есть ``` то делаем code block
-function renderBotText(text) {
-  const s = String(text || "").trim();
-  if (!s) return `<div>Я не смог сформировать ответ.</div>`;
+function addMessage(role, text, sources = []) {
+  const wrap = document.createElement("div");
+  wrap.className = `msg ${role}`;
+  wrap.innerHTML = escapeHtml(text || "");
 
-  // code fence
-  const parts = s.split("```");
-  if (parts.length === 1) return `<div>${escapeHtml(s)}</div>`;
-
-  let html = "";
-  for (let i = 0; i < parts.length; i++) {
-    const chunk = parts[i];
-    if (i % 2 === 0) {
-      if (chunk.trim()) html += `<div>${escapeHtml(chunk.trim())}</div>`;
-    } else {
-      // inside fence: optional first line = lang
-      const lines = chunk.split("\n");
-      let code = chunk;
-      if (lines.length > 1 && lines[0].length <= 20) {
-        code = lines.slice(1).join("\n");
-      }
-      html += `<pre class="code"><code>${escapeHtml(code.trim())}</code></pre>`;
-    }
-  }
-  return html;
-}
-
-function addMessage(role, html, sources = []) {
-  const chat = document.getElementById("chat");
-  const el = document.createElement("div");
-  el.className = `msg ${role === "user" ? "user" : "bot"}`;
-
-  if (role === "user") {
-    el.textContent = html;
-  } else {
-    el.innerHTML = html;
-
-    if (sources && sources.length) {
-      const meta = document.createElement("div");
-      meta.className = "meta";
-      meta.innerHTML =
-        `<span>Источники:</span>` +
-        sources
-          .slice(0, 4)
-          .map((s) => `<a href="${s.url}" target="_blank" rel="noreferrer">${escapeHtml(s.source)}</a>`)
-          .join("");
-      el.appendChild(meta);
-    }
+  if (sources && sources.length) {
+    const src = document.createElement("div");
+    src.className = "sources";
+    const links = sources.slice(0, 6).map((r, idx) => {
+      const title = r.source || r.title || `Источник ${idx + 1}`;
+      const url = r.url || "";
+      if (!url) return escapeHtml(title);
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>`;
+    });
+    src.innerHTML = `Источники: ${links.join(" · ")}`;
+    wrap.appendChild(src);
   }
 
-  chat.appendChild(el);
-  chat.scrollTop = chat.scrollHeight;
+  chatEl.appendChild(wrap);
+  chatEl.scrollTop = chatEl.scrollHeight;
 }
 
-function clearChat() {
-  const chat = document.getElementById("chat");
-  chat.innerHTML = "";
-  addMessage("bot", renderBotText("Привет! Я ARTIX. Пиши вопрос или вставляй код — помогу и/или найду информацию."));
+async function fetchWebSearch(query) {
+  const url = `${WORKER_BASE}/api/search?q=${encodeURIComponent(query)}`;
+  const resp = await fetch(url, { method: "GET" });
+  if (!resp.ok) throw new Error(`search http ${resp.status}`);
+  const data = await resp.json();
+
+  const results = Array.isArray(data.results) ? data.results : [];
+  return results;
 }
 
-function autoGrow(textarea) {
-  textarea.style.height = "auto";
-  textarea.style.height = Math.min(textarea.scrollHeight, 220) + "px";
-}
-
-// ====== Heuristics ======
-
-function isMathQuery(q) {
-  // очень простая проверка арифметики
-  return /^[\d\s()+\-*/.^]+$/.test(q.trim());
-}
-
-function safeEvalMath(q) {
-  // Безопасный мини-калькулятор: только цифры/операторы/скобки
-  // (не идеал, но лучше чем eval на всё подряд)
-  const expr = q.trim();
-  if (!isMathQuery(expr)) return null;
-  try {
-    // eslint-disable-next-line no-new-func
-    const fn = new Function(`"use strict"; return (${expr});`);
-    const v = fn();
-    if (typeof v === "number" && Number.isFinite(v)) return v;
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function buildFallbackAnswer(q, results) {
-  if (!results.length) {
-    return `Я ничего не нашёл по запросу: "${q}". Попробуй уточнить (добавь контекст/ключевые слова).`;
+function buildWebAnswer(query, results) {
+  if (!results || results.length === 0) {
+    return `Не нашёл нормальные источники по запросу "${query}". Попробуй уточнить (добавь слово/контекст).`;
   }
 
-  // Берём первые 2–3 сниппета и склеиваем
   const top = results.slice(0, 3);
-  let text = `Вот что удалось найти по запросу "${q}":\n\n`;
+  let out = `Вот что удалось найти по запросу "${query}":\n\n`;
+
   for (const r of top) {
-    text += `• ${r.title}: ${r.text}\n\n`;
+    const title = r.title || "Без названия";
+    const text = (r.text || "").trim();
+
+    out += `• ${title}\n`;
+    if (text) out += `${text}\n`;
+    out += `\n`;
   }
-  text += `Если хочешь — вставь код/ошибку целиком, я разберу пошагово.`;
-  return text.trim();
+
+  return out.trim();
 }
 
-// ====== Model loader (optional) ======
+/**
+ * ЗАГЛУШКА локальной модели.
+ * Заменишь на свой реальный код (OrtRun / onnxruntime-web).
+ *
+ * Договор:
+ * - должна вернуть строку-ответ
+ * - либо бросить ошибку (throw), если модель не смогла
+ */
+async function runLocalModel(query, webResults) {
+  // === ВАЖНО ===
+  // Сейчас заглушка специально "падает" для демонстрации web-режима.
+  // Когда подключишь OrtRun — убери throw и верни настоящий ответ.
+  throw new Error("Local model not connected (OrtRun)");
+}
 
-async function getGenerator() {
-  if (!generatorPromise) {
-    setStatus("busy", "загружаю модель…");
-    generatorPromise = pipeline("text-generation", "Xenova/Qwen1.5-0.5B-Chat");
+/**
+ * Основная логика ответа:
+ * 1) пытаемся web-search (чтобы всегда был план Б)
+ * 2) пытаемся локальную модель
+ * 3) если локальная упала — отвечаем web
+ *    и ставим статус web/err
+ */
+async function answerUser(query) {
+  setStatus("busy", "думаю…");
+
+  // 1) web search — мягко (если упал, не убиваем всё)
+  let webResults = [];
+  try {
+    webResults = await fetchWebSearch(query);
+  } catch (e) {
+    webResults = [];
   }
-  return generatorPromise;
+
+  // 2) локальная модель
+  try {
+    const modelAnswer = await runLocalModel(query, webResults);
+    addMessage("bot", modelAnswer || "…", webResults);
+    setStatus("ok", "готово");
+    return;
+  } catch (e) {
+    // 3) fallback в web (но НЕ пишем "fallback")
+    const webAnswer = buildWebAnswer(query, webResults);
+    addMessage("bot", webAnswer, webResults);
+
+    if (webResults.length > 0) setStatus("web", "поиск");
+    else setStatus("err", "ошибка");
+  }
 }
 
-function buildPrompt(q, results) {
-  const context = results
-    .slice(0, 4)
-    .map((r, i) => `Источник ${i + 1}: ${r.source}\nЗаголовок: ${r.title}\nТекст: ${r.text}\nURL: ${r.url}`)
-    .join("\n\n");
-
-  return [
-    "Ты — ассистент по программированию и фактам. Отвечай по-русски.",
-    "Если вопрос про код — давай рабочий пример и короткое объяснение.",
-    "Если используешь источники — опирайся ТОЛЬКО на контекст ниже.",
-    "Если контекста мало — скажи, что именно уточнить.",
-    "",
-    "КОНТЕКСТ:",
-    context || "(контекста нет)",
-    "",
-    `ВОПРОС: ${q}`,
-    "",
-    "ОТВЕТ:",
-  ].join("\n");
+function normalizeQuery(s) {
+  return String(s || "").trim();
 }
 
-// ====== Main send ======
+function autosizeTextarea(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 180) + "px";
+}
 
-async function send() {
-  const input = document.getElementById("input");
-  const q = input.value.trim();
+async function onSend() {
+  const q = normalizeQuery(inputEl.value);
   if (!q) return;
 
-  input.value = "";
-  autoGrow(input);
-
   addMessage("user", q);
+  inputEl.value = "";
+  autosizeTextarea(inputEl);
 
-  // 1) математика моментально
-  const math = safeEvalMath(q);
-  if (math !== null) {
-    addMessage("bot", renderBotText(`Ответ: ${math}`));
-    return;
-  }
-
-  setStatus("busy", "ищу…");
-
-  // 2) web search
-  let results = [];
-  try {
-    const r = await fetch(`${SEARCH_ENDPOINT}?q=${encodeURIComponent(q)}&limit=6`, { method: "GET" });
-    const data = await r.json();
-    results = Array.isArray(data?.results) ? data.results : [];
-  } catch (_) {
-    results = [];
-  }
-
-  // 3) пробуем локальную модель, но не ломаемся если она падает
-  try {
-    const gen = await getGenerator();
-    setStatus("busy", "думаю…");
-
-    const prompt = buildPrompt(q, results);
-    const out = await gen(prompt, {
-      max_new_tokens: 220,
-      temperature: 0.4,
-      top_p: 0.9,
-      repetition_penalty: 1.05,
-    });
-
-    const text = out?.[0]?.generated_text || "";
-    // generated_text содержит prompt + ответ — берём всё после "ОТВЕТ:"
-    const idx = text.lastIndexOf("ОТВЕТ:");
-    const answer = idx >= 0 ? text.slice(idx + "ОТВЕТ:".length).trim() : text.trim();
-
-    if (!answer) throw new Error("empty answer");
-
-    addMessage("bot", renderBotText(answer), results);
-    setStatus("ok", "готов");
-  } catch (e) {
-    // Это твой OrtRun error code 6 — здесь будет fallback
-    const fb = buildFallbackAnswer(q, results);
-    addMessage("bot", renderBotText(fb), results);
-    setStatus("err", "fallback");
-  }
+  await answerUser(q);
 }
 
-function init() {
-  const input = document.getElementById("input");
-  const btnSend = document.getElementById("btnSend");
-  const btnClear = document.getElementById("btnClear");
+sendBtn.addEventListener("click", onSend);
 
-  btnSend.addEventListener("click", send);
-  btnClear.addEventListener("click", clearChat);
+inputEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    onSend();
+  }
+});
 
-  input.addEventListener("input", () => autoGrow(input));
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      send();
-    }
-  });
+inputEl.addEventListener("input", () => autosizeTextarea(inputEl));
 
-  clearChat();
+clearBtn.addEventListener("click", () => {
+  chatEl.innerHTML = "";
   setStatus("ok", "готов");
-}
+});
 
-init();
+setStatus("ok", "готов");
+autosizeTextarea(inputEl);
