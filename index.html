@@ -14,6 +14,7 @@
     </div>
 
     <div class="status">
+      <span id="modeBadge" class="badge badge-web" title="Источник ответа">web</span>
       <span id="statusDot" class="dot ok"></span>
       <span id="statusText" class="status-text">готов</span>
       <button id="clearBtn" class="btn ghost" type="button">Очистить</button>
@@ -24,12 +25,17 @@
     <section id="chat" class="chat"></section>
 
     <footer class="composer">
-      <textarea id="input" class="input" rows="1"
-        placeholder="Пиши вопрос или вставляй код… (Enter — отправить, Shift+Enter — новая строка)"></textarea>
+      <textarea
+        id="input"
+        class="input"
+        rows="1"
+        placeholder="Пиши вопрос или вставляй код… (Enter — отправить, Shift+Enter — новая строка)"
+      ></textarea>
       <button id="sendBtn" class="btn primary" type="button">Отправить</button>
     </footer>
   </main>
 
+  <!-- ВАЖНО: обычный script, без type=module. app.js НЕ содержит import -->
   <script src="./app.js"></script>
 </body>
 </html>
