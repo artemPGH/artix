@@ -11,16 +11,15 @@
 
   <div id="authModal" class="modal">
     <div class="modal-content">
+      <span class="close-modal" id="closeModal">&times;</span>
       <img src="./assets/artix-logo.png" alt="Logo" class="modal-logo">
-      <h2 id="modalTitle">Добро пожаловать в ARTIX</h2>
-      <p id="modalDesc">Пожалуйста, войдите, чтобы начать общение</p>
-      
+      <h2 id="modalTitle">Вход в ARTIX</h2>
       <div class="auth-form">
-        <input type="email" id="authEmail" placeholder="Ваша почта" class="input">
+        <input type="email" id="authEmail" placeholder="Email" class="input">
         <input type="password" id="authPassword" placeholder="Пароль" class="input">
         <button id="authBtn" class="btn primary">Войти</button>
         <p class="auth-switch">
-          Нет аккаунта? <a href="#" id="toggleAuth">Зарегистрироваться</a>
+          Нет аккаунта? <a href="#" id="toggleAuth">Создать</a>
         </p>
       </div>
     </div>
@@ -31,18 +30,21 @@
        <img src="./assets/artix-logo.png" alt="ARTIX logo" class="brand-logo" />
        <div class="brand-text">
          <div class="brand-name">ARTIX</div>
-         <div class="brand-sub">ассистент · аккаунты · поиск</div>
+         <div class="brand-sub">AI Assistant</div>
        </div>
      </div>
 
      <div class="status">
-       <span id="userEmail" class="user-email">Гость</span>
-       <button id="logoutBtn" class="btn ghost" style="display: none;">Выйти</button>
-       <span id="modeBadge" class="badge">OFFLINE</span>
+       <div id="userSection" class="user-section">
+         <span id="userEmail" class="user-email">Гость</span>
+         <button id="loginBtn" class="btn ghost-cyan">Войти</button>
+         <button id="logoutBtn" class="btn ghost" style="display: none;">Выйти</button>
+       </div>
+       <span id="modeBadge" class="badge">READY</span>
      </div>
   </header>
 
-  <main class="layout" id="mainContent" style="filter: blur(5px); pointer-events: none;">
+  <main class="layout">
     <section id="chat" class="chat"></section>
 
     <footer class="composer">
@@ -50,11 +52,12 @@
         <select id="modelSelect" class="model-select">
           <option value="artix-1">ARTIX 1</option>
         </select>
+        <button id="clearBtn" class="btn ghost-sm">Очистить чат</button>
       </div>
       
       <div class="input-wrapper">
-        <textarea id="input" class="input" rows="1" placeholder="Доступно после входа..."></textarea>
-        <button id="sendBtn" class="btn primary" type="button">Отправить</button>
+        <textarea id="input" class="input" rows="1" placeholder="Спроси о чем угодно..."></textarea>
+        <button id="sendBtn" class="btn primary">Отправить</button>
       </div>
     </footer>
   </main>
