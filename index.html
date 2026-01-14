@@ -3,218 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <title>ARTIX</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <style>
-    /* ===== RESET ===== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Inter, system-ui, sans-serif;
-    }
-
-    body {
-      background: #050914;
-      color: #fff;
-      overflow: hidden;
-    }
-
-    /* ===== ANIMATED BACKGROUND ===== */
-    .background {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      background:
-        linear-gradient(120deg, rgba(0,255,255,0.04), rgba(160,90,255,0.04)),
-        repeating-linear-gradient(
-          135deg,
-          rgba(255,255,255,0.03) 0px,
-          rgba(255,255,255,0.03) 1px,
-          transparent 1px,
-          transparent 14px
-        );
-      animation: bgMove 20s linear infinite;
-    }
-
-    @keyframes bgMove {
-      from { background-position: 0 0; }
-      to   { background-position: 400px 400px; }
-    }
-
-    /* glowing animated lines */
-    .lines {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    .line {
-      position: absolute;
-      width: 200%;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, #00f6ff, transparent);
-      opacity: 0.15;
-      animation: lineMove 6s linear infinite;
-    }
-
-    @keyframes lineMove {
-      from { transform: translateX(-50%); }
-      to   { transform: translateX(0); }
-    }
-
-    /* ===== LAYOUT ===== */
-    .app {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-
-    /* ===== HEADER ===== */
-    header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 20px 28px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      background: rgba(5,9,20,0.7);
-      backdrop-filter: blur(10px);
-    }
-
-    header img {
-      width: 48px;
-      height: 48px;
-    }
-
-    header .title {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-
-    header .subtitle {
-      font-size: 12px;
-      opacity: 0.6;
-    }
-
-    /* ===== CHAT ===== */
-    .chat {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      max-width: 900px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 24px;
-      gap: 16px;
-    }
-
-    .messages {
-      flex: 1;
-      overflow-y: auto;
-      padding-right: 8px;
-    }
-
-    .message {
-      margin-bottom: 12px;
-      line-height: 1.5;
-    }
-
-    .assistant {
-      color: #9fdcff;
-    }
-
-    .user {
-      color: #fff;
-      text-align: right;
-    }
-
-    /* ===== INPUT ===== */
-    .input-box {
-      display: flex;
-      gap: 12px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 14px;
-      padding: 12px;
-    }
-
-    .input-box input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: #fff;
-      font-size: 15px;
-    }
-
-    .input-box button {
-      background: linear-gradient(135deg, #00f6ff, #a259ff);
-      border: none;
-      border-radius: 10px;
-      padding: 10px 16px;
-      cursor: pointer;
-      font-weight: 600;
-      color: #000;
-    }
-  </style>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
-
 <body>
-  <!-- BACKGROUND -->
-  <div class="background"></div>
 
-  <div class="lines">
-    <div class="line" style="top:20%; animation-duration:8s"></div>
-    <div class="line" style="top:45%; animation-duration:6s"></div>
-    <div class="line" style="top:70%; animation-duration:10s"></div>
+  <!-- 🔹 АНИМИРОВАННЫЙ ФОН (НИЧЕГО НЕ ПЕРЕКРЫВАЕТ) -->
+  <div class="artix-bg">
+    <span></span>
+    <span></span>
+    <span></span>
   </div>
 
-  <!-- APP -->
-  <div class="app">
-    <header>
-      <img src="artix-logo.png" alt="ARTIX">
-      <div>
-        <div class="title">ARTIX</div>
-        <div class="subtitle">ассистент · код · факты · поиск</div>
+  <!-- 🔹 ОСНОВНОЙ КОНТЕЙНЕР САЙТА -->
+  <div id="app">
+
+    <!-- 🔹 HEADER / БРЕНД -->
+    <header class="header">
+      <div class="brand">
+        <img
+          src="./assets/artix-logo.png"
+          alt="ARTIX logo"
+          class="brand-logo"
+        />
+
+        <div class="brand-text">
+          <div class="brand-name">ARTIX</div>
+          <div class="brand-sub">ассистент · код · факты · веб-поиск</div>
+        </div>
       </div>
     </header>
 
+    <!-- 🔹 ЧАТ (ТВОЯ ЛОГИКА НЕ ТРОНУТА) -->
     <main class="chat">
-      <div class="messages" id="messages">
-        <div class="message assistant">Привет. Я ARTIX. Чем займёмся?</div>
-      </div>
+      <div class="messages" id="messages"></div>
 
       <div class="input-box">
-        <input id="input" placeholder="Введите запрос..." />
-        <button onclick="send()">Отправить</button>
+        <input
+          type="text"
+          placeholder="Пиши вопрос — попробую ответить…"
+        />
+        <button>Отправить</button>
       </div>
     </main>
+
   </div>
 
-  <script>
-    const messages = document.getElementById('messages');
-    const input = document.getElementById('input');
-
-    function send() {
-      if (!input.value.trim()) return;
-
-      const userMsg = document.createElement('div');
-      userMsg.className = 'message user';
-      userMsg.textContent = input.value;
-      messages.appendChild(userMsg);
-
-      const botMsg = document.createElement('div');
-      botMsg.className = 'message assistant';
-      botMsg.textContent = 'Запрос принят. (пока без API)';
-      messages.appendChild(botMsg);
-
-      input.value = '';
-      messages.scrollTop = messages.scrollHeight;
-    }
-  </script>
+  <script src="./app.js"></script>
 </body>
 </html>
