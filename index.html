@@ -4,26 +4,45 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>ARTIX — AI Assistant</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+
+  <div id="authModal" class="modal">
+    <div class="modal-content">
+      <img src="./assets/artix-logo.png" alt="Logo" class="modal-logo">
+      <h2 id="modalTitle">Добро пожаловать в ARTIX</h2>
+      <p id="modalDesc">Пожалуйста, войдите, чтобы начать общение</p>
+      
+      <div class="auth-form">
+        <input type="email" id="authEmail" placeholder="Ваша почта" class="input">
+        <input type="password" id="authPassword" placeholder="Пароль" class="input">
+        <button id="authBtn" class="btn primary">Войти</button>
+        <p class="auth-switch">
+          Нет аккаунта? <a href="#" id="toggleAuth">Зарегистрироваться</a>
+        </p>
+      </div>
+    </div>
+  </div>
 
   <header class="topbar">
      <div class="brand">
        <img src="./assets/artix-logo.png" alt="ARTIX logo" class="brand-logo" />
        <div class="brand-text">
          <div class="brand-name">ARTIX</div>
-         <div class="brand-sub">ассистент · код · факты</div>
+         <div class="brand-sub">ассистент · аккаунты · поиск</div>
        </div>
      </div>
 
      <div class="status">
-       <span id="modeBadge" class="badge">READY</span>
-       <button id="clearBtn" class="btn ghost" type="button">Очистить</button>
+       <span id="userEmail" class="user-email">Гость</span>
+       <button id="logoutBtn" class="btn ghost" style="display: none;">Выйти</button>
+       <span id="modeBadge" class="badge">OFFLINE</span>
      </div>
   </header>
 
-  <main class="layout">
+  <main class="layout" id="mainContent" style="filter: blur(5px); pointer-events: none;">
     <section id="chat" class="chat"></section>
 
     <footer class="composer">
@@ -34,12 +53,7 @@
       </div>
       
       <div class="input-wrapper">
-        <textarea
-          id="input"
-          class="input"
-          rows="1"
-          placeholder="Спроси ARTIX о чем угодно..."
-        ></textarea>
+        <textarea id="input" class="input" rows="1" placeholder="Доступно после входа..."></textarea>
         <button id="sendBtn" class="btn primary" type="button">Отправить</button>
       </div>
     </footer>
