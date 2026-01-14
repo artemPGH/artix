@@ -1,9 +1,11 @@
-// Конфигурация Supabase (твои данные из скриншота)
+// Конфигурация Supabase
 const SUPABASE_URL = "https://ptetkaidxtignrlhrbpj.supabase.co";
+// ВНИМАНИЕ: Если этот ключ не сработает, скопируй еще раз "anon public" из панели Supabase
 const SUPABASE_KEY = "sb_publishable_Y5HdMr6bd9FZKJXk-bK0vw_JPVOLigb";
 
-// Инициализация клиента. Используем 'sb', чтобы не конфликтовать с глобальным объектом 'supabase'
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Используем глобальное имя для создания клиента
+const { createClient } = window.supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const SEARCH_API = "https://artix-search.facts-com99.workers.dev/api/search";
 
@@ -20,13 +22,11 @@ const modelSelect = document.getElementById("modelSelect");
 
 let isSignUpMode = false;
 
-// --- ФУНКЦИИ АВТОРИЗАЦИИ ---
+// --- АВТОРИЗАЦИЯ ---
 
-// Открыть/закрыть модальное окно
 loginBtn.onclick = () => authModal.style.display = "block";
 document.getElementById("closeModal").onclick = () => authModal.style.display = "none";
 
-// Переключение между Входом и Регистрацией
 document.getElementById("toggleAuth").onclick = (e) => {
     e.preventDefault();
     isSignUpMode = !isSignUpMode;
@@ -35,30 +35,31 @@ document.getElementById("toggleAuth").onclick = (e) => {
     e.target.innerText = isSignUpMode ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Создать профиль";
 };
 
-// Обработка кнопки Входа/Регистрации
 authBtn.onclick = async () => {
     const email = document.getElementById("authEmail").value;
     const password = document.getElementById("authPassword").value;
 
-    if (!email || !password) return alert("Введите почту и пароль");
+    if (!email || !password) return alert("Введите данные");
 
-    if (isSignUpMode) {
-        const { error } = await sb.auth.signUp({ email, password });
-        if (error) alert("Ошибка регистрации: " + error.message);
-        else alert("Успешно! Если вы не отключили подтверждение в настройках Supabase, проверьте почту.");
-    } else {
-        const { error } = await sb.auth.signInWithPassword({ email, password });
-        if (error) alert("Ошибка входа: " + error.message);
-        else authModal.style.display = "none";
+    try {
+        if (isSignUpMode) {
+            const { error } = await sb.auth.signUp({ email, password });
+            if (error) throw error;
+            alert("Готово! Проверьте почту (или войдите, если подтверждение отключено).");
+        } else {
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            authModal.style.display = "none";
+        }
+    } catch (err) {
+        alert("Ошибка: " + err.message);
     }
 };
 
-// Выход из аккаунта
 logoutBtn.onclick = async () => {
     await sb.auth.signOut();
 };
 
-// Отслеживание состояния пользователя (вошел или вышел)
 sb.auth.onAuthStateChange((event, session) => {
     if (session) {
         userEmailText.innerText = session.user.email;
@@ -71,7 +72,7 @@ sb.auth.onAuthStateChange((event, session) => {
     }
 });
 
-// --- ФУНКЦИИ ЧАТА ---
+// --- ЧАТ ---
 
 async function onSend() {
     const text = inputEl.value.trim();
@@ -89,72 +90,44 @@ async function onSend() {
         const data = await res.json();
 
         if (data.ok && data.results && data.results.length > 0) {
-            let reply = `Вот что удалось найти по запросу **${text}**:\n\n`;
-            data.results.forEach(r => {
-                reply += `🔹 **${r.title}**\n${r.text}\n\n`;
-            });
+            let reply = `Результаты по запросу **${text}**:\n\n`;
+            data.results.forEach(r => reply += `🔹 **${r.title}**\n${r.text}\n\n`);
             pushBot(reply, data.results.map(r => ({ name: r.source, url: r.url })));
         } else {
-            pushBot("К сожалению, информации не найдено. Попробуй спросить иначе.");
+            pushBot("Информации не найдено.");
         }
     } catch (err) {
-        pushBot("Ошибка связи с воркером. Проверь статус Cloudflare.");
+        pushBot("Ошибка подключения к поиску.");
     } finally {
         document.getElementById("modeBadge").innerText = "READY";
     }
 }
 
 sendBtn.onclick = onSend;
-inputEl.onkeydown = (e) => { 
-    if(e.key === 'Enter' && !e.shiftKey) { 
-        e.preventDefault(); 
-        onSend(); 
-    } 
-};
+inputEl.onkeydown = (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } };
 
-function pushUser(text) {
-    const el = document.createElement("div");
-    el.className = "msg user";
-    el.innerText = text;
-    chatEl.appendChild(el);
-    chatEl.scrollTop = chatEl.scrollHeight;
+function pushUser(t) {
+    const el = document.createElement("div"); el.className = "msg user"; el.innerText = t;
+    chatEl.appendChild(el); chatEl.scrollTop = chatEl.scrollHeight;
 }
 
-function pushBot(text, sources = []) {
-    const el = document.createElement("div");
-    el.className = "msg bot";
-    
-    // Форматирование жирного текста и переносов
-    const formatted = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-    
-    const body = document.createElement("div");
-    body.innerHTML = formatted;
+function pushBot(t, sources = []) {
+    const el = document.createElement("div"); el.className = "msg bot";
+    const formatted = t.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+    const body = document.createElement("div"); body.innerHTML = formatted;
     el.appendChild(body);
 
     if (sources.length > 0) {
-        const sDiv = document.createElement("div");
-        sDiv.className = "sources";
-        sDiv.innerHTML = "Источники: ";
-        
-        // Удаляем дубликаты ссылок
+        const sDiv = document.createElement("div"); sDiv.className = "sources"; sDiv.innerHTML = "Источники: ";
         const unique = Array.from(new Set(sources.map(s => s.url))).map(url => sources.find(s => s.url === url));
-        
         unique.forEach((s, i) => {
-            const a = document.createElement("a");
-            a.href = s.url;
-            a.target = "_blank";
-            a.innerText = s.name;
+            const a = document.createElement("a"); a.href = s.url; a.target = "_blank"; a.innerText = s.name;
             sDiv.appendChild(a);
             if (i < unique.length - 1) sDiv.appendChild(document.createTextNode(" · "));
         });
         el.appendChild(sDiv);
     }
-    
-    chatEl.appendChild(el);
-    chatEl.scrollTop = chatEl.scrollHeight;
+    chatEl.appendChild(el); chatEl.scrollTop = chatEl.scrollHeight;
 }
 
-document.getElementById("clearBtn").onclick = () => {
-    chatEl.innerHTML = "";
-    pushBot("Чат очищен.");
-};
+document.getElementById("clearBtn").onclick = () => { chatEl.innerHTML = ""; pushBot("Чат очищен."); };
