@@ -10,13 +10,13 @@ const modeBadge = document.getElementById("modeBadge");
 init();
 
 function init() {
-    pushBot("ARTIX online ✅. Чем я могу помочь сегодня?");
+    pushBot("Привет! Я **ARTIX**. Я могу найти информацию в Википедии и других источниках. Что тебя интересует?");
 
     sendBtn.addEventListener("click", onSend);
 
     clearBtn.addEventListener("click", () => {
         chatEl.innerHTML = "";
-        pushBot("История очищена.");
+        pushBot("История чата очищена.");
     });
 
     inputEl.addEventListener("keydown", (e) => {
@@ -44,15 +44,16 @@ async function onSend() {
 
     const result = await webSearch(text);
 
-    if (result.ok && result.results.length > 0) {
-        let responseText = `Вот что удалось найти по запросу **${text}**:\n\n`;
+    if (result.ok && result.results && result.results.length > 0) {
+        let responseText = `По твоему запросу **${text}** найдено следующее:\n\n`;
+        
         result.results.forEach(item => {
             responseText += `🔹 **${item.title}**\n${item.text}\n\n`;
         });
         
         pushBot(responseText, result.results.map(r => ({ name: r.source, url: r.url })));
     } else {
-        pushBot("К сожалению, по этому запросу ничего не нашлось в базе знаний. Попробуй спросить иначе!");
+        pushBot("К сожалению, я не смог найти подробного описания по этому запросу. Попробуй уточнить вопрос!");
     }
     
     modeBadge.textContent = result.model ? result.model.toUpperCase() : "READY";
@@ -67,7 +68,6 @@ async function webSearch(query) {
         if (!res.ok) return { ok: false };
         return await res.json();
     } catch (e) {
-        console.error("Search error:", e);
         return { ok: false };
     }
 }
@@ -96,13 +96,17 @@ function pushBot(text, sources = []) {
         const srcWrap = document.createElement("div");
         srcWrap.className = "sources";
         srcWrap.innerHTML = "Источники: ";
-        sources.forEach((s, i) => {
+        // Убираем дубликаты ссылок
+        const uniqueSources = Array.from(new Set(sources.map(s => s.url)))
+            .map(url => sources.find(s => s.url === url));
+
+        uniqueSources.forEach((s, i) => {
             const a = document.createElement("a");
             a.href = s.url;
             a.target = "_blank";
             a.textContent = s.name;
             srcWrap.appendChild(a);
-            if (i < sources.length - 1) srcWrap.appendChild(document.createTextNode(" · "));
+            if (i < uniqueSources.length - 1) srcWrap.appendChild(document.createTextNode(" · "));
         });
         el.appendChild(srcWrap);
     }
