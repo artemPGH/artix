@@ -1,116 +1,110 @@
+// ТВОИ ДАННЫЕ ИЗ SUPABASE
+const SUPABASE_URL = "https://ptetkaidxtignrlhrbpj.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Y5HdMr6bd9FZKJXk-bK0vw_JPVOLigb";
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const SEARCH_API = "https://artix-search.facts-com99.workers.dev/api/search";
 
+// Элементы
 const chatEl = document.getElementById("chat");
 const inputEl = document.getElementById("input");
 const sendBtn = document.getElementById("sendBtn");
-const clearBtn = document.getElementById("clearBtn");
-const modelSelect = document.getElementById("modelSelect");
-const modeBadge = document.getElementById("modeBadge");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const authModal = document.getElementById("authModal");
+const userEmailText = document.getElementById("userEmail");
 
-init();
+let isSignUp = false;
 
-function init() {
-    pushBot("Привет! Я **ARTIX**. Я могу найти информацию в Википедии и других источниках. Что тебя интересует?");
+// --- ЛОГИКА АВТОРИЗАЦИИ ---
 
-    sendBtn.addEventListener("click", onSend);
+// Открыть модалку
+loginBtn.onclick = () => authModal.style.display = "block";
+document.getElementById("closeModal").onclick = () => authModal.style.display = "none";
 
-    clearBtn.addEventListener("click", () => {
-        chatEl.innerHTML = "";
-        pushBot("История чата очищена.");
-    });
+// Переключение Вход / Регистрация
+document.getElementById("toggleAuth").onclick = (e) => {
+    e.preventDefault();
+    isSignUp = !isSignUp;
+    document.getElementById("modalTitle").innerText = isSignUp ? "Регистрация" : "Вход в ARTIX";
+    document.getElementById("authBtn").innerText = isSignUp ? "Создать аккаунт" : "Войти";
+    e.target.innerText = isSignUp ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Создать";
+};
 
-    inputEl.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            onSend();
-        }
-    });
+// Кнопка действия (Вход или Регистрация)
+document.getElementById("authBtn").onclick = async () => {
+    const email = document.getElementById("authEmail").value;
+    const password = document.getElementById("authPassword").value;
 
-    inputEl.addEventListener("input", () => {
-        inputEl.style.height = "auto";
-        inputEl.style.height = Math.min(inputEl.scrollHeight, 150) + "px";
-    });
-}
+    if (isSignUp) {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) alert(error.message);
+        else alert("Проверь почту для подтверждения!");
+    } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+        else authModal.style.display = "none";
+    }
+};
+
+// Выход
+logoutBtn.onclick = async () => {
+    await supabase.auth.signOut();
+};
+
+// Следим за состоянием пользователя
+supabase.auth.onAuthStateChange((event, session) => {
+    if (session) {
+        userEmailText.innerText = session.user.email;
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "inline-block";
+    } else {
+        userEmailText.innerText = "Гость";
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+    }
+});
+
+// --- ЛОГИКА ЧАТА ---
 
 async function onSend() {
     const text = inputEl.value.trim();
     if (!text) return;
-
     inputEl.value = "";
-    inputEl.style.height = "auto";
-
     pushUser(text);
-    modeBadge.textContent = "THINKING...";
 
-    const result = await webSearch(text);
+    const res = await fetch(`${SEARCH_API}?q=${encodeURIComponent(text)}&model=ARTIX-1`);
+    const data = await res.json();
 
-    if (result.ok && result.results && result.results.length > 0) {
-        let responseText = `По твоему запросу **${text}** найдено следующее:\n\n`;
-        
-        result.results.forEach(item => {
-            responseText += `🔹 **${item.title}**\n${item.text}\n\n`;
-        });
-        
-        pushBot(responseText, result.results.map(r => ({ name: r.source, url: r.url })));
+    if (data.ok && data.results.length > 0) {
+        let reply = `Нашел информацию:\n\n`;
+        data.results.forEach(r => reply += `🔹 **${r.title}**\n${r.text}\n\n`);
+        pushBot(reply, data.results.map(r => ({name: r.source, url: r.url})));
     } else {
-        pushBot("К сожалению, я не смог найти подробного описания по этому запросу. Попробуй уточнить вопрос!");
-    }
-    
-    modeBadge.textContent = result.model ? result.model.toUpperCase() : "READY";
-}
-
-async function webSearch(query) {
-    const model = modelSelect.value;
-    const url = `${SEARCH_API}?q=${encodeURIComponent(query)}&model=${model}`;
-
-    try {
-        const res = await fetch(url);
-        if (!res.ok) return { ok: false };
-        return await res.json();
-    } catch (e) {
-        return { ok: false };
+        pushBot("Ничего не нашлось. Попробуй другой запрос.");
     }
 }
 
-function pushUser(text) {
-    const el = document.createElement("div");
-    el.className = "msg user";
-    el.textContent = text;
-    chatEl.appendChild(el);
-    chatEl.scrollTop = chatEl.scrollHeight;
+sendBtn.onclick = onSend;
+inputEl.onkeydown = (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } };
+
+function pushUser(t) {
+    const d = document.createElement("div"); d.className="msg user"; d.innerText=t;
+    chatEl.appendChild(d); chatEl.scrollTop = chatEl.scrollHeight;
 }
 
-function pushBot(text, sources = []) {
-    const el = document.createElement("div");
-    el.className = "msg bot";
-
-    const formattedText = text
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\n/g, '<br>');
-    
-    const body = document.createElement("div");
-    body.innerHTML = formattedText;
-    el.appendChild(body);
-
-    if (sources.length > 0) {
-        const srcWrap = document.createElement("div");
-        srcWrap.className = "sources";
-        srcWrap.innerHTML = "Источники: ";
-        // Убираем дубликаты ссылок
-        const uniqueSources = Array.from(new Set(sources.map(s => s.url)))
-            .map(url => sources.find(s => s.url === url));
-
-        uniqueSources.forEach((s, i) => {
-            const a = document.createElement("a");
-            a.href = s.url;
-            a.target = "_blank";
-            a.textContent = s.name;
-            srcWrap.appendChild(a);
-            if (i < uniqueSources.length - 1) srcWrap.appendChild(document.createTextNode(" · "));
+function pushBot(t, src=[]) {
+    const d = document.createElement("div"); d.className="msg bot";
+    d.innerHTML = t.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+    if(src.length > 0) {
+        const sDiv = document.createElement("div"); sDiv.className="sources"; sDiv.innerText="Источники: ";
+        src.forEach(s => {
+            const a = document.createElement("a"); a.href=s.url; a.target="_blank"; a.innerText=s.name + " ";
+            sDiv.appendChild(a);
         });
-        el.appendChild(srcWrap);
+        d.appendChild(sDiv);
     }
-
-    chatEl.appendChild(el);
-    chatEl.scrollTop = chatEl.scrollHeight;
+    chatEl.appendChild(d); chatEl.scrollTop = chatEl.scrollHeight;
 }
+
+document.getElementById("clearBtn").onclick = () => { chatEl.innerHTML = ""; pushBot("Чат очищен."); };
