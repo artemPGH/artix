@@ -3,30 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>ARTIX</title>
+  <title>ARTIX — AI Assistant</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
 
   <header class="topbar">
      <div class="brand">
-       <img
-         src="./assets/artix-logo.png"
-         alt="ARTIX logo"
-         class="brand-logo"
-       />
+       <img src="./assets/artix-logo.png" alt="ARTIX logo" class="brand-logo" />
        <div class="brand-text">
          <div class="brand-name">ARTIX</div>
-         <div class="brand-sub">AI Assistant</div>
+         <div class="brand-sub">ассистент · код · факты</div>
        </div>
      </div>
 
      <div class="status">
        <span id="modeBadge" class="badge">READY</span>
-       
        <span id="statusDot" style="display: none;"></span>
        <span id="statusText" style="display: none;"></span>
-
        <button id="clearBtn" class="btn ghost" type="button">Очистить</button>
      </div>
   </header>
@@ -36,13 +30,21 @@
     <section id="chat" class="chat"></section>
 
     <footer class="composer">
-      <textarea
-        id="input"
-        class="input"
-        rows="1"
-        placeholder="Пиши вопрос или вставляй код... (Enter — отправить)"
-      ></textarea>
-      <button id="sendBtn" class="btn primary" type="button">Отправить</button>
+      <div class="composer-controls">
+        <select id="modelSelect" class="model-select">
+          <option value="artix-1">ARTIX 1</option>
+        </select>
+      </div>
+      
+      <div class="input-wrapper">
+        <textarea
+          id="input"
+          class="input"
+          rows="1"
+          placeholder="Спроси ARTIX о чем угодно... (Enter — отправить)"
+        ></textarea>
+        <button id="sendBtn" class="btn primary" type="button">Отправить</button>
+      </div>
     </footer>
 
   </main>
