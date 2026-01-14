@@ -1,7 +1,7 @@
 // Конфигурация Supabase
 const SUPABASE_URL = "https://ptetkaidxtignrlhrbpj.supabase.co";
 // ВНИМАНИЕ: Если этот ключ не сработает, скопируй еще раз "anon public" из панели Supabase
-const SUPABASE_KEY = "sb_publishable_Y5HdMr6bd9FZKJXk-bK0vw_JPVOLigb";
+const SUPABASE_KEY = "sb_publishable_Y5HdMr6bD9FZKJXk-bK0vw_JPV0Ligb";
 
 // Используем глобальное имя для создания клиента
 const { createClient } = window.supabase;
