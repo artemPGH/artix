@@ -1,7 +1,5 @@
-// Настройка API твоего Cloudflare Worker
 const SEARCH_API = "https://artix-search.facts-com99.workers.dev/api/search";
 
-// Элементы интерфейса
 const chatEl = document.getElementById("chat");
 const inputEl = document.getElementById("input");
 const sendBtn = document.getElementById("sendBtn");
@@ -9,22 +7,18 @@ const clearBtn = document.getElementById("clearBtn");
 const modelSelect = document.getElementById("modelSelect");
 const modeBadge = document.getElementById("modeBadge");
 
-// Запуск при загрузке страницы
 init();
 
 function init() {
-    pushBot("ARTIX online ✅. Модель **ARTIX 1** готова к работе.");
+    pushBot("ARTIX online ✅. Чем я могу помочь сегодня?");
 
-    // Обработка кнопки отправить
     sendBtn.addEventListener("click", onSend);
 
-    // Очистка чата
     clearBtn.addEventListener("click", () => {
         chatEl.innerHTML = "";
-        pushBot("Чат очищен.");
+        pushBot("История очищена.");
     });
 
-    // Отправка по Enter
     inputEl.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -32,7 +26,6 @@ function init() {
         }
     });
 
-    // Автоматический размер текстового поля
     inputEl.addEventListener("input", () => {
         inputEl.style.height = "auto";
         inputEl.style.height = Math.min(inputEl.scrollHeight, 150) + "px";
@@ -43,25 +36,26 @@ async function onSend() {
     const text = inputEl.value.trim();
     if (!text) return;
 
-    // Сбрасываем ввод
     inputEl.value = "";
     inputEl.style.height = "auto";
 
-    // Рисуем сообщение юзера
     pushUser(text);
-
-    // Идем за ответом
     modeBadge.textContent = "THINKING...";
-    
-    const response = await webSearch(text);
 
-    if (response.ok) {
-        pushBot(response.text, response.sources);
-        modeBadge.textContent = response.model.toUpperCase();
+    const result = await webSearch(text);
+
+    if (result.ok && result.results.length > 0) {
+        let responseText = `Вот что удалось найти по запросу **${text}**:\n\n`;
+        result.results.forEach(item => {
+            responseText += `🔹 **${item.title}**\n${item.text}\n\n`;
+        });
+        
+        pushBot(responseText, result.results.map(r => ({ name: r.source, url: r.url })));
     } else {
-        pushBot("Произошла ошибка при поиске. Проверь воркер.");
-        modeBadge.textContent = "READY";
+        pushBot("К сожалению, по этому запросу ничего не нашлось в базе знаний. Попробуй спросить иначе!");
     }
+    
+    modeBadge.textContent = result.model ? result.model.toUpperCase() : "READY";
 }
 
 async function webSearch(query) {
@@ -71,22 +65,9 @@ async function webSearch(query) {
     try {
         const res = await fetch(url);
         if (!res.ok) return { ok: false };
-        const data = await res.json();
-
-        if (data.results && data.results.length > 0) {
-            let answer = `Нашел информацию по запросу **${query}**:\n\n`;
-            data.results.forEach(res => {
-                answer += `• **${res.title}**: ${res.text.slice(0, 150)}...\n`;
-            });
-            return { 
-                ok: true, 
-                text: answer, 
-                model: data.model,
-                sources: data.results.map(r => ({ name: r.source, url: r.url }))
-            };
-        }
-        return { ok: true, text: "Результатов не найдено.", model: data.model, sources: [] };
+        return await res.json();
     } catch (e) {
+        console.error("Search error:", e);
         return { ok: false };
     }
 }
@@ -103,8 +84,9 @@ function pushBot(text, sources = []) {
     const el = document.createElement("div");
     el.className = "msg bot";
 
-    // Превращаем **текст** в жирный для красоты
-    const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    const formattedText = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
     
     const body = document.createElement("div");
     body.innerHTML = formattedText;
