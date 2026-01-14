@@ -9,25 +9,16 @@
 <body>
   <header class="topbar">
      <div class="brand">
-      <img
-        src="./assets/artix-logo.png"
-        alt="ARTIX logo"
-        class="brand-logo"
-      />
+       <img src="./assets/artix-logo.png" alt="ARTIX" class="brand-logo" />
+       <div class="brand-text">
+         <div class="brand-name">ARTIX</div>
+       </div>
+     </div>
 
-  <div class="brand-text">
-    <div class="brand-name">ARTIX</div>
-    <div class="brand-sub">ассистент · код · факты · веб-поиск</div>
-  </div>
-</div>
-
-
-    <div class="status">
-      <span id="modeBadge" class="badge badge-web" title="Источник ответа">web</span>
-      <span id="statusDot" class="dot ok"></span>
-      <span id="statusText" class="status-text">готов</span>
-      <button id="clearBtn" class="btn ghost" type="button">Очистить</button>
-    </div>
+     <div class="status">
+       <span id="modeBadge" class="badge">ready</span>
+       <button id="clearBtn" class="btn ghost">Очистить</button>
+     </div>
   </header>
 
   <main class="layout">
@@ -38,13 +29,12 @@
         id="input"
         class="input"
         rows="1"
-        placeholder="Пиши вопрос или вставляй код… (Enter — отправить, Shift+Enter — новая строка)"
+        placeholder="Спроси что-нибудь..."
       ></textarea>
-      <button id="sendBtn" class="btn primary" type="button">Отправить</button>
+      <button id="sendBtn" class="btn primary">Отправить</button>
     </footer>
   </main>
 
-  <!-- ВАЖНО: обычный script, без type=module. app.js НЕ содержит import -->
   <script src="./app.js"></script>
 </body>
 </html>
