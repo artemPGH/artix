@@ -2,26 +2,37 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>ARTIX</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+
   <header class="topbar">
      <div class="brand">
-       <img src="./assets/artix-logo.png" alt="ARTIX" class="brand-logo" />
+       <img
+         src="./assets/artix-logo.png"
+         alt="ARTIX logo"
+         class="brand-logo"
+       />
        <div class="brand-text">
          <div class="brand-name">ARTIX</div>
+         <div class="brand-sub">AI Assistant</div>
        </div>
      </div>
 
      <div class="status">
-       <span id="modeBadge" class="badge">ready</span>
-       <button id="clearBtn" class="btn ghost">Очистить</button>
+       <span id="modeBadge" class="badge">READY</span>
+       
+       <span id="statusDot" style="display: none;"></span>
+       <span id="statusText" style="display: none;"></span>
+
+       <button id="clearBtn" class="btn ghost" type="button">Очистить</button>
      </div>
   </header>
 
   <main class="layout">
+    
     <section id="chat" class="chat"></section>
 
     <footer class="composer">
@@ -29,10 +40,11 @@
         id="input"
         class="input"
         rows="1"
-        placeholder="Спроси что-нибудь..."
+        placeholder="Пиши вопрос или вставляй код... (Enter — отправить)"
       ></textarea>
-      <button id="sendBtn" class="btn primary">Отправить</button>
+      <button id="sendBtn" class="btn primary" type="button">Отправить</button>
     </footer>
+
   </main>
 
   <script src="./app.js"></script>
