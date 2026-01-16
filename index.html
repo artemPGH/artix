@@ -3,77 +3,87 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>ARTIX — AI Assistant</title>
+  <title>ARTIX</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="./styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
   <aside id="sidebar" class="sidebar">
     <div class="sidebar-header">
-      <button id="newChatBtn" class="btn primary-sm">+ Новый чат</button>
-    </div>
-    <div id="chatList" class="chat-list">
+      <div class="brand">
+        <img src="./assets/artix-logo.png" alt="Logo" class="brand-logo">
+        <span class="brand-name">ARTIX</span>
       </div>
+      <button id="closeSidebarBtn" class="icon-btn mobile-only">✕</button>
+    </div>
+
+    <button id="newChatBtn" class="btn new-chat-btn">
+      <span>+</span> Новый чат
+    </button>
+
+    <div class="chat-list-container">
+      <div class="list-header">ИСТОРИЯ</div>
+      <div id="chatList" class="chat-list">
+        <div class="placeholder-text">Войдите, чтобы видеть историю</div>
+      </div>
+    </div>
+
     <div class="sidebar-footer">
-      <p>ARTIX v1.2</p>
+      <div id="userSection" class="user-profile">
+        <div class="user-info">
+          <div class="avatar">👤</div>
+          <span id="userEmail" class="email">Гость</span>
+        </div>
+        <div class="auth-buttons">
+          <button id="loginBtn" class="btn small-btn">Войти</button>
+          <button id="logoutBtn" class="btn small-btn" style="display: none;">Выйти</button>
+        </div>
+      </div>
     </div>
   </aside>
 
-  <div id="authModal" class="modal">
-    <div class="modal-content">
-      <span class="close-modal" id="closeModal">&times;</span>
-      <img src="./assets/artix-logo.png" alt="Logo" class="modal-logo">
-      <h2 id="modalTitle">Вход в ARTIX</h2>
-      <div class="auth-form">
-        <input type="email" id="authEmail" placeholder="Email" class="input">
-        <input type="password" id="authPassword" placeholder="Пароль" class="input">
-        <button id="authBtn" class="btn primary">Продолжить</button>
-        <p class="auth-switch">
-          Нет профиля? <a href="#" id="toggleAuth">Создать</a>
-        </p>
+  <main class="main-content">
+    
+    <header class="topbar">
+      <button id="menuBtn" class="icon-btn">☰</button>
+      <div class="status-indicator">
+        <span id="statusDot" class="status-dot online"></span>
+        <span id="statusText" class="status-text">Система: Онлайн</span>
       </div>
+    </header>
+
+    <div id="chat" class="chat-area">
+      <div class="welcome-message">
+        <h1>Привет! Я ARTIX.</h1>
+        <p>Чем могу помочь сегодня?</p>
+      </div>
+    </div>
+
+    <div class="composer-area">
+      <div class="input-container">
+        <textarea id="input" rows="1" placeholder="Отправь сообщение..."></textarea>
+        <button id="sendBtn" class="send-btn">➤</button>
+      </div>
+      <div class="model-info">Работает на модели ARTIX-1</div>
+    </div>
+
+  </main>
+
+  <div id="authModal" class="modal">
+    <div class="modal-box">
+      <span class="close-modal" id="closeModal">✕</span>
+      <h2>Вход в систему</h2>
+      <input type="email" id="authEmail" placeholder="Email" class="modal-input">
+      <input type="password" id="authPassword" placeholder="Пароль" class="modal-input">
+      <button id="authBtn" class="btn full-btn">Продолжить</button>
+      <p id="toggleAuth" class="auth-link">Нет аккаунта? Создать</p>
     </div>
   </div>
 
-  <header class="topbar">
-     <div class="brand">
-       <button id="menuBtn" class="menu-btn">☰</button>
-       <img src="./assets/artix-logo.png" alt="Logo" class="brand-logo" />
-       <div class="brand-text">
-         <div class="brand-name">ARTIX</div>
-       </div>
-     </div>
-
-     <div class="status">
-       <div id="userSection" class="user-section">
-         <span id="userEmail" class="user-email">Гость</span>
-         <button id="loginBtn" class="btn ghost-cyan">Войти</button>
-         <button id="logoutBtn" class="btn ghost" style="display: none;">Выйти</button>
-       </div>
-       <span id="modeBadge" class="badge">READY</span>
-     </div>
-  </header>
-
-  <main class="layout">
-    <div id="chat" class="chat"></div>
-
-    <footer class="composer">
-      <div class="composer-controls">
-        <select id="modelSelect" class="model-select">
-          <option value="artix-1">ARTIX 1</option>
-        </select>
-        <button id="clearBtn" class="btn ghost-sm">Очистить экран</button>
-      </div>
-      
-      <div class="input-wrapper">
-        <textarea id="input" class="input" rows="1" placeholder="Спроси ARTIX..."></textarea>
-        <button id="sendBtn" class="btn primary">Отправить</button>
-      </div>
-    </footer>
-  </main>
-
   <div id="overlay" class="overlay"></div>
+
   <script src="./app.js"></script>
 </body>
 </html>
