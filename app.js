@@ -1,133 +1,140 @@
-// Конфигурация Supabase
 const SUPABASE_URL = "https://ptetkaidxtignrlhrbpj.supabase.co";
-// ВНИМАНИЕ: Если этот ключ не сработает, скопируй еще раз "anon public" из панели Supabase
-const SUPABASE_KEY = "sb_publishable_Y5HdMr6bD9FZKJXk-bK0vw_JPV0Ligb";
-
-// Используем глобальное имя для создания клиента
-const { createClient } = window.supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_KEY = "sb_publishable_Y5HdMr6bd9FZKJXk-bK0vw_JPVOLigb";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const SEARCH_API = "https://artix-search.facts-com99.workers.dev/api/search";
 
-// Элементы интерфейса
+let currentChatId = null;
+let isSignUpMode = false;
+
+// Элементы
+const sidebar = document.getElementById("sidebar");
+const overlay = document.getElementById("overlay");
+const chatList = document.getElementById("chatList");
 const chatEl = document.getElementById("chat");
 const inputEl = document.getElementById("input");
-const sendBtn = document.getElementById("sendBtn");
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const authModal = document.getElementById("authModal");
-const userEmailText = document.getElementById("userEmail");
-const authBtn = document.getElementById("authBtn");
-const modelSelect = document.getElementById("modelSelect");
 
-let isSignUpMode = false;
+// --- УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ ---
+
+document.getElementById("menuBtn").onclick = () => {
+    sidebar.classList.add("open");
+    overlay.classList.add("active");
+};
+
+overlay.onclick = () => {
+    sidebar.classList.remove("open");
+    overlay.classList.remove("active");
+};
 
 // --- АВТОРИЗАЦИЯ ---
 
-loginBtn.onclick = () => authModal.style.display = "block";
-document.getElementById("closeModal").onclick = () => authModal.style.display = "none";
-
-document.getElementById("toggleAuth").onclick = (e) => {
-    e.preventDefault();
-    isSignUpMode = !isSignUpMode;
-    document.getElementById("modalTitle").innerText = isSignUpMode ? "Регистрация" : "Вход в ARTIX";
-    authBtn.innerText = isSignUpMode ? "Создать аккаунт" : "Войти";
-    e.target.innerText = isSignUpMode ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Создать профиль";
-};
-
-authBtn.onclick = async () => {
-    const email = document.getElementById("authEmail").value;
-    const password = document.getElementById("authPassword").value;
-
-    if (!email || !password) return alert("Введите данные");
-
-    try {
-        if (isSignUpMode) {
-            const { error } = await sb.auth.signUp({ email, password });
-            if (error) throw error;
-            alert("Готово! Проверьте почту (или войдите, если подтверждение отключено).");
-        } else {
-            const { error } = await sb.auth.signInWithPassword({ email, password });
-            if (error) throw error;
-            authModal.style.display = "none";
-        }
-    } catch (err) {
-        alert("Ошибка: " + err.message);
-    }
-};
-
-logoutBtn.onclick = async () => {
-    await sb.auth.signOut();
-};
+document.getElementById("loginBtn").onclick = () => document.getElementById("authModal").style.display = "block";
+document.getElementById("closeModal").onclick = () => document.getElementById("authModal").style.display = "none";
 
 sb.auth.onAuthStateChange((event, session) => {
     if (session) {
-        userEmailText.innerText = session.user.email;
-        loginBtn.style.display = "none";
-        logoutBtn.style.display = "inline-block";
+        document.getElementById("userEmail").innerText = session.user.email;
+        document.getElementById("loginBtn").style.display = "none";
+        document.getElementById("logoutBtn").style.display = "inline-block";
+        loadChats();
     } else {
-        userEmailText.innerText = "Гость";
-        loginBtn.style.display = "inline-block";
-        logoutBtn.style.display = "none";
+        document.getElementById("userEmail").innerText = "Гость";
+        document.getElementById("loginBtn").style.display = "inline-block";
+        document.getElementById("logoutBtn").style.display = "none";
+        chatList.innerHTML = "";
     }
 });
 
-// --- ЧАТ ---
+// --- РАБОТА С ЧАТАМИ ---
+
+async function loadChats() {
+    const { data, error } = await sb.from('chats').select('*').order('created_at', { ascending: false });
+    if (data) {
+        chatList.innerHTML = "";
+        data.forEach(chat => {
+            const el = document.createElement("div");
+            el.className = `chat-item ${currentChatId === chat.id ? 'active' : ''}`;
+            el.innerText = chat.title;
+            el.onclick = () => selectChat(chat.id);
+            chatList.appendChild(el);
+        });
+    }
+}
+
+async function selectChat(id) {
+    currentChatId = id;
+    sidebar.classList.remove("open");
+    overlay.classList.remove("active");
+    chatEl.innerHTML = "";
+    loadMessages(id);
+    loadChats();
+}
+
+async function loadMessages(chatId) {
+    const { data } = await sb.from('messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: true });
+    if (data) data.forEach(m => m.role === 'user' ? pushUser(m.content, false) : pushBot(m.content, [], false));
+}
+
+document.getElementById("newChatBtn").onclick = async () => {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return alert("Войдите, чтобы создавать чаты");
+
+    const { data, error } = await sb.from('chats').insert([{ user_id: user.id, title: 'Новый чат' }]).select();
+    if (data) selectChat(data[0].id);
+};
+
+// --- ЛОГИКА ОТПРАВКИ ---
 
 async function onSend() {
     const text = inputEl.value.trim();
     if (!text) return;
-    
+
     inputEl.value = "";
-    inputEl.style.height = "auto";
-    pushUser(text);
+    pushUser(text, true);
 
     document.getElementById("modeBadge").innerText = "THINKING...";
 
     try {
-        const model = modelSelect.value;
-        const res = await fetch(`${SEARCH_API}?q=${encodeURIComponent(text)}&model=${model}`);
+        const res = await fetch(`${SEARCH_API}?q=${encodeURIComponent(text)}`);
         const data = await res.json();
+        
+        let reply = "Ничего не найдено.";
+        let sources = [];
 
-        if (data.ok && data.results && data.results.length > 0) {
-            let reply = `Результаты по запросу **${text}**:\n\n`;
+        if (data.ok && data.results.length > 0) {
+            reply = `Нашел информацию по запросу **${text}**:\n\n`;
             data.results.forEach(r => reply += `🔹 **${r.title}**\n${r.text}\n\n`);
-            pushBot(reply, data.results.map(r => ({ name: r.source, url: r.url })));
-        } else {
-            pushBot("Информации не найдено.");
+            sources = data.results.map(r => ({ name: r.source, url: r.url }));
         }
-    } catch (err) {
-        pushBot("Ошибка подключения к поиску.");
+
+        pushBot(reply, sources, true);
+    } catch (e) {
+        pushBot("Ошибка поиска.");
     } finally {
         document.getElementById("modeBadge").innerText = "READY";
     }
 }
 
-sendBtn.onclick = onSend;
-inputEl.onkeydown = (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } };
+document.getElementById("sendBtn").onclick = onSend;
 
-function pushUser(t) {
-    const el = document.createElement("div"); el.className = "msg user"; el.innerText = t;
+// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+
+function pushUser(text, save = true) {
+    const el = document.createElement("div"); el.className = "msg user"; el.innerText = text;
     chatEl.appendChild(el); chatEl.scrollTop = chatEl.scrollHeight;
+    if (save && currentChatId) sb.from('messages').insert([{ chat_id: currentChatId, role: 'user', content: text }]).then();
 }
 
-function pushBot(t, sources = []) {
+function pushBot(text, sources = [], save = true) {
     const el = document.createElement("div"); el.className = "msg bot";
-    const formatted = t.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-    const body = document.createElement("div"); body.innerHTML = formatted;
-    el.appendChild(body);
-
+    el.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+    
     if (sources.length > 0) {
-        const sDiv = document.createElement("div"); sDiv.className = "sources"; sDiv.innerHTML = "Источники: ";
-        const unique = Array.from(new Set(sources.map(s => s.url))).map(url => sources.find(s => s.url === url));
-        unique.forEach((s, i) => {
-            const a = document.createElement("a"); a.href = s.url; a.target = "_blank"; a.innerText = s.name;
-            sDiv.appendChild(a);
-            if (i < unique.length - 1) sDiv.appendChild(document.createTextNode(" · "));
-        });
+        const sDiv = document.createElement("div"); sDiv.className = "sources"; sDiv.innerText = "Источники: ";
+        sources.forEach(s => sDiv.innerHTML += `<a href="${s.url}" target="_blank">${s.name}</a> `);
         el.appendChild(sDiv);
     }
-    chatEl.appendChild(el); chatEl.scrollTop = chatEl.scrollHeight;
-}
 
-document.getElementById("clearBtn").onclick = () => { chatEl.innerHTML = ""; pushBot("Чат очищен."); };
+    chatEl.appendChild(el); chatEl.scrollTop = chatEl.scrollHeight;
+    if (save && currentChatId) sb.from('messages').insert([{ chat_id: currentChatId, role: 'bot', content: text }]).then();
+}
