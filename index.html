@@ -9,6 +9,17 @@
 </head>
 <body>
 
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <button id="newChatBtn" class="btn primary-sm">+ Новый чат</button>
+    </div>
+    <div id="chatList" class="chat-list">
+      </div>
+    <div class="sidebar-footer">
+      <p>ARTIX v1.2</p>
+    </div>
+  </aside>
+
   <div id="authModal" class="modal">
     <div class="modal-content">
       <span class="close-modal" id="closeModal">&times;</span>
@@ -19,7 +30,7 @@
         <input type="password" id="authPassword" placeholder="Пароль" class="input">
         <button id="authBtn" class="btn primary">Продолжить</button>
         <p class="auth-switch">
-          Ещё нет аккаунта? <a href="#" id="toggleAuth">Создать профиль</a>
+          Нет профиля? <a href="#" id="toggleAuth">Создать</a>
         </p>
       </div>
     </div>
@@ -27,10 +38,10 @@
 
   <header class="topbar">
      <div class="brand">
-       <img src="./assets/artix-logo.png" alt="ARTIX logo" class="brand-logo" />
+       <button id="menuBtn" class="menu-btn">☰</button>
+       <img src="./assets/artix-logo.png" alt="Logo" class="brand-logo" />
        <div class="brand-text">
          <div class="brand-name">ARTIX</div>
-         <div class="brand-sub">AI Assistant</div>
        </div>
      </div>
 
@@ -45,23 +56,24 @@
   </header>
 
   <main class="layout">
-    <section id="chat" class="chat"></section>
+    <div id="chat" class="chat"></div>
 
     <footer class="composer">
       <div class="composer-controls">
         <select id="modelSelect" class="model-select">
           <option value="artix-1">ARTIX 1</option>
         </select>
-        <button id="clearBtn" class="btn ghost-sm">Очистить чат</button>
+        <button id="clearBtn" class="btn ghost-sm">Очистить экран</button>
       </div>
       
       <div class="input-wrapper">
-        <textarea id="input" class="input" rows="1" placeholder="Спроси ARTIX о чем угодно..."></textarea>
+        <textarea id="input" class="input" rows="1" placeholder="Спроси ARTIX..."></textarea>
         <button id="sendBtn" class="btn primary">Отправить</button>
       </div>
     </footer>
   </main>
 
+  <div id="overlay" class="overlay"></div>
   <script src="./app.js"></script>
 </body>
 </html>
