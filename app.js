@@ -1,140 +1,248 @@
+// --- НАСТРОЙКИ ---
 const SUPABASE_URL = "https://ptetkaidxtignrlhrbpj.supabase.co";
-const SUPABASE_KEY = "sb_publishable_Y5HdMr6bd9FZKJXk-bK0vw_JPVOLigb";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+const SUPABASE_KEY = "sb_publishable_Y5HdMr6bd9FZKJXk-bK0vw_JPVOLigb"; // Используем стандартный ключ
 const SEARCH_API = "https://artix-search.facts-com99.workers.dev/api/search";
 
+// Инициализация Supabase (исправленный метод)
+const { createClient } = window.supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Переменные состояния
 let currentChatId = null;
 let isSignUpMode = false;
 
-// Элементы
-const sidebar = document.getElementById("sidebar");
-const overlay = document.getElementById("overlay");
-const chatList = document.getElementById("chatList");
-const chatEl = document.getElementById("chat");
-const inputEl = document.getElementById("input");
-
-// --- УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ ---
-
-document.getElementById("menuBtn").onclick = () => {
-    sidebar.classList.add("open");
-    overlay.classList.add("active");
+// Элементы DOM
+const els = {
+    chatArea: document.getElementById("chat"),
+    input: document.getElementById("input"),
+    sendBtn: document.getElementById("sendBtn"),
+    sidebar: document.getElementById("sidebar"),
+    chatList: document.getElementById("chatList"),
+    menuBtn: document.getElementById("menuBtn"),
+    closeSidebarBtn: document.getElementById("closeSidebarBtn"),
+    overlay: document.getElementById("overlay"),
+    authModal: document.getElementById("authModal"),
+    userEmail: document.getElementById("userEmail"),
+    loginBtn: document.getElementById("loginBtn"),
+    logoutBtn: document.getElementById("logoutBtn"),
+    statusDot: document.getElementById("statusDot"),
+    statusText: document.getElementById("statusText"),
+    newChatBtn: document.getElementById("newChatBtn"),
+    authBtn: document.getElementById("authBtn"),
+    toggleAuth: document.getElementById("toggleAuth")
 };
 
-overlay.onclick = () => {
-    sidebar.classList.remove("open");
-    overlay.classList.remove("active");
-};
+// --- 1. ЛОГИКА ИНТЕРФЕЙСА ---
 
-// --- АВТОРИЗАЦИЯ ---
+// Открытие/закрытие меню
+function toggleMenu() {
+    els.sidebar.classList.toggle("open");
+    els.overlay.classList.toggle("active");
+}
 
-document.getElementById("loginBtn").onclick = () => document.getElementById("authModal").style.display = "block";
-document.getElementById("closeModal").onclick = () => document.getElementById("authModal").style.display = "none";
+els.menuBtn.onclick = toggleMenu;
+els.closeSidebarBtn.onclick = toggleMenu;
+els.overlay.onclick = toggleMenu;
 
-sb.auth.onAuthStateChange((event, session) => {
-    if (session) {
-        document.getElementById("userEmail").innerText = session.user.email;
-        document.getElementById("loginBtn").style.display = "none";
-        document.getElementById("logoutBtn").style.display = "inline-block";
-        loadChats();
-    } else {
-        document.getElementById("userEmail").innerText = "Гость";
-        document.getElementById("loginBtn").style.display = "inline-block";
-        document.getElementById("logoutBtn").style.display = "none";
-        chatList.innerHTML = "";
+// Автоматическое расширение поля ввода
+els.input.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+    if(this.value === '') this.style.height = 'auto';
+});
+
+// Отправка по Enter
+els.input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
     }
 });
 
-// --- РАБОТА С ЧАТАМИ ---
+els.sendBtn.onclick = sendMessage;
+
+// --- 2. ЛОГИКА АВТОРИЗАЦИИ ---
+
+els.loginBtn.onclick = () => els.authModal.style.display = "block";
+document.getElementById("closeModal").onclick = () => els.authModal.style.display = "none";
+
+els.toggleAuth.onclick = () => {
+    isSignUpMode = !isSignUpMode;
+    document.querySelector("#authModal h2").innerText = isSignUpMode ? "Регистрация" : "Вход в систему";
+    els.authBtn.innerText = isSignUpMode ? "Создать аккаунт" : "Продолжить";
+    els.toggleAuth.innerText = isSignUpMode ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Создать";
+};
+
+els.authBtn.onclick = async () => {
+    const email = document.getElementById("authEmail").value;
+    const password = document.getElementById("authPassword").value;
+    
+    if (!email || !password) return alert("Заполните все поля");
+
+    try {
+        const { error } = isSignUpMode 
+            ? await sb.auth.signUp({ email, password })
+            : await sb.auth.signInWithPassword({ email, password });
+
+        if (error) throw error;
+        
+        els.authModal.style.display = "none";
+        if (isSignUpMode) alert("Аккаунт создан! Теперь можно войти.");
+        
+    } catch (err) {
+        alert("Ошибка: " + err.message);
+    }
+};
+
+els.logoutBtn.onclick = async () => {
+    await sb.auth.signOut();
+    window.location.reload(); // Перезагружаем страницу для очистки
+};
+
+// Проверка статуса пользователя
+sb.auth.onAuthStateChange((event, session) => {
+    if (session) {
+        els.userEmail.innerText = session.user.email;
+        els.loginBtn.style.display = "none";
+        els.logoutBtn.style.display = "inline-block";
+        document.querySelector(".placeholder-text").style.display = "none";
+        loadChats(); // Загружаем чаты при входе
+    } else {
+        els.userEmail.innerText = "Гость";
+        els.loginBtn.style.display = "inline-block";
+        els.logoutBtn.style.display = "none";
+        els.chatList.innerHTML = '<div class="placeholder-text">Войдите для сохранения истории</div>';
+    }
+});
+
+// --- 3. ЧАТЫ И СООБЩЕНИЯ ---
 
 async function loadChats() {
-    const { data, error } = await sb.from('chats').select('*').order('created_at', { ascending: false });
-    if (data) {
-        chatList.innerHTML = "";
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+
+    const { data } = await sb.from('chats').select('*').order('created_at', { ascending: false });
+    
+    els.chatList.innerHTML = "";
+    if (data && data.length > 0) {
         data.forEach(chat => {
-            const el = document.createElement("div");
-            el.className = `chat-item ${currentChatId === chat.id ? 'active' : ''}`;
-            el.innerText = chat.title;
-            el.onclick = () => selectChat(chat.id);
-            chatList.appendChild(el);
+            const div = document.createElement("div");
+            div.className = `chat-item ${currentChatId === chat.id ? 'active' : ''}`;
+            div.innerText = chat.title || "Новый чат";
+            div.onclick = () => openChat(chat.id);
+            els.chatList.appendChild(div);
         });
+    } else {
+        els.chatList.innerHTML = '<div class="placeholder-text">История пуста</div>';
     }
 }
 
-async function selectChat(id) {
-    currentChatId = id;
-    sidebar.classList.remove("open");
-    overlay.classList.remove("active");
-    chatEl.innerHTML = "";
-    loadMessages(id);
-    loadChats();
-}
-
-async function loadMessages(chatId) {
-    const { data } = await sb.from('messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: true });
-    if (data) data.forEach(m => m.role === 'user' ? pushUser(m.content, false) : pushBot(m.content, [], false));
-}
-
-document.getElementById("newChatBtn").onclick = async () => {
+els.newChatBtn.onclick = async () => {
     const { data: { user } } = await sb.auth.getUser();
-    if (!user) return alert("Войдите, чтобы создавать чаты");
+    if (!user) return alert("Сначала войдите в аккаунт");
 
-    const { data, error } = await sb.from('chats').insert([{ user_id: user.id, title: 'Новый чат' }]).select();
-    if (data) selectChat(data[0].id);
+    // Создаем новый чат в базе
+    const { data, error } = await sb.from('chats').insert([{ user_id: user.id, title: 'Новый диалог' }]).select();
+    
+    if (error) return alert("Ошибка создания чата");
+    
+    if (data) {
+        openChat(data[0].id);
+        loadChats(); // Обновляем список
+    }
 };
 
-// --- ЛОГИКА ОТПРАВКИ ---
+async function openChat(chatId) {
+    currentChatId = chatId;
+    els.chatArea.innerHTML = ""; // Очищаем экран
+    loadChats(); // Чтобы обновить подсветку активного чата
 
-async function onSend() {
-    const text = inputEl.value.trim();
+    // Загружаем сообщения
+    const { data } = await sb.from('messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: true });
+    
+    if (data) {
+        data.forEach(msg => appendMessage(msg.role, msg.content, false));
+    }
+    
+    // На мобильном закрываем меню
+    if (window.innerWidth < 768) toggleMenu();
+}
+
+async function sendMessage() {
+    const text = els.input.value.trim();
     if (!text) return;
 
-    inputEl.value = "";
-    pushUser(text, true);
+    els.input.value = "";
+    els.input.style.height = "auto";
+    
+    // Если чат не выбран, создаем новый (если пользователь залогинен)
+    const { data: { user } } = await sb.auth.getUser();
+    if (user && !currentChatId) {
+        const { data } = await sb.from('chats').insert([{ user_id: user.id, title: text.substring(0, 20) + '...' }]).select();
+        if (data) currentChatId = data[0].id;
+        loadChats();
+    }
 
-    document.getElementById("modeBadge").innerText = "THINKING...";
+    appendMessage('user', text);
+    setStatus('thinking');
 
     try {
-        const res = await fetch(`${SEARCH_API}?q=${encodeURIComponent(text)}`);
+        const res = await fetch(`${SEARCH_API}?q=${encodeURIComponent(text)}&model=ARTIX-1`);
         const data = await res.json();
         
-        let reply = "Ничего не найдено.";
+        let replyText = "Не удалось найти информацию.";
         let sources = [];
 
         if (data.ok && data.results.length > 0) {
-            reply = `Нашел информацию по запросу **${text}**:\n\n`;
-            data.results.forEach(r => reply += `🔹 **${r.title}**\n${r.text}\n\n`);
+            replyText = data.results.map(r => `🔹 **${r.title}**\n${r.text}`).join("\n\n");
             sources = data.results.map(r => ({ name: r.source, url: r.url }));
         }
 
-        pushBot(reply, sources, true);
+        appendMessage('bot', replyText, sources);
+        
     } catch (e) {
-        pushBot("Ошибка поиска.");
+        appendMessage('bot', "Ошибка соединения с сервером.");
     } finally {
-        document.getElementById("modeBadge").innerText = "READY";
+        setStatus('online');
     }
 }
-
-document.getElementById("sendBtn").onclick = onSend;
 
 // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 
-function pushUser(text, save = true) {
-    const el = document.createElement("div"); el.className = "msg user"; el.innerText = text;
-    chatEl.appendChild(el); chatEl.scrollTop = chatEl.scrollHeight;
-    if (save && currentChatId) sb.from('messages').insert([{ chat_id: currentChatId, role: 'user', content: text }]).then();
-}
-
-function pushBot(text, sources = [], save = true) {
-    const el = document.createElement("div"); el.className = "msg bot";
-    el.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+function appendMessage(role, text, sources = []) {
+    const div = document.createElement("div");
+    div.className = `msg ${role}`;
     
-    if (sources.length > 0) {
-        const sDiv = document.createElement("div"); sDiv.className = "sources"; sDiv.innerText = "Источники: ";
-        sources.forEach(s => sDiv.innerHTML += `<a href="${s.url}" target="_blank">${s.name}</a> `);
-        el.appendChild(sDiv);
+    // Преобразуем текст (жирный шрифт, переносы)
+    let html = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+    
+    // Если есть источники (только для бота)
+    if (role === 'bot' && sources.length > 0) {
+        const uniqueSources = [...new Map(sources.map(item => [item['url'], item])).values()];
+        let sourcesHtml = `<div class="sources">Sources: `;
+        uniqueSources.forEach(s => {
+            sourcesHtml += `<a href="${s.url}" target="_blank">${s.name}</a>`;
+        });
+        sourcesHtml += `</div>`;
+        html += sourcesHtml;
     }
 
-    chatEl.appendChild(el); chatEl.scrollTop = chatEl.scrollHeight;
-    if (save && currentChatId) sb.from('messages').insert([{ chat_id: currentChatId, role: 'bot', content: text }]).then();
+    div.innerHTML = html;
+    els.chatArea.appendChild(div);
+    els.chatArea.scrollTop = els.chatArea.scrollHeight;
+
+    // Сохраняем в базу, если есть ID чата и это новое сообщение
+    if (currentChatId && sources !== false) { // sources=false используется как флаг "не сохранять при загрузке"
+        sb.from('messages').insert([{ chat_id: currentChatId, role, content: text }]).then();
+    }
+}
+
+function setStatus(state) {
+    if (state === 'thinking') {
+        els.statusDot.className = "status-dot thinking";
+        els.statusText.innerText = "Думаю...";
+    } else {
+        els.statusDot.className = "status-dot online";
+        els.statusText.innerText = "Система: Онлайн";
+    }
 }
