@@ -1,17 +1,15 @@
 // --- НАСТРОЙКИ ---
 const SUPABASE_URL = "https://ptetkaidxtignrlhrbpj.supabase.co";
-const SUPABASE_KEY = "sb_publishable_Y5HdMr6bD9FZKJXk-bK0vw_JPV0Ligb"; // Используем стандартный ключ
+const SUPABASE_KEY = "sb_publishable_Y5HdMr6bd9FZKJXk-bK0vw_JPVOLigb";
 const SEARCH_API = "https://artix-search.facts-com99.workers.dev/api/search";
 
-// Инициализация Supabase (исправленный метод)
 const { createClient } = window.supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Переменные состояния
+// Переменные
 let currentChatId = null;
 let isSignUpMode = false;
 
-// Элементы DOM
 const els = {
     chatArea: document.getElementById("chat"),
     input: document.getElementById("input"),
@@ -32,43 +30,54 @@ const els = {
     toggleAuth: document.getElementById("toggleAuth")
 };
 
-// --- 1. ЛОГИКА ИНТЕРФЕЙСА ---
+// --- ФУНКЦИЯ ПРИВЕТСТВИЯ ---
+function showWelcome() {
+    els.chatArea.innerHTML = `
+        <div class="welcome-container">
+            <img src="./assets/artix-logo.png" alt="Logo" class="welcome-logo">
+            <h1>Привет! Я ARTIX.</h1>
+            <p>Готов помочь с поиском, кодом и идеями.</p>
+        </div>
+    `;
+}
 
-// Открытие/закрытие меню
+// --- ИНТЕРФЕЙС ---
+// Универсальная функция переключения меню
 function toggleMenu() {
-    els.sidebar.classList.toggle("open");
-    els.overlay.classList.toggle("active");
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+        els.sidebar.classList.toggle("open");
+        els.overlay.classList.toggle("active");
+    } else {
+        els.sidebar.classList.toggle("collapsed");
+    }
 }
 
 els.menuBtn.onclick = toggleMenu;
 els.closeSidebarBtn.onclick = toggleMenu;
 els.overlay.onclick = toggleMenu;
 
-// Автоматическое расширение поля ввода
 els.input.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = (this.scrollHeight) + 'px';
     if(this.value === '') this.style.height = 'auto';
 });
 
-// Отправка по Enter
 els.input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
     }
 });
-
 els.sendBtn.onclick = sendMessage;
 
-// --- 2. ЛОГИКА АВТОРИЗАЦИИ ---
-
+// --- АВТОРИЗАЦИЯ ---
 els.loginBtn.onclick = () => els.authModal.style.display = "block";
 document.getElementById("closeModal").onclick = () => els.authModal.style.display = "none";
 
 els.toggleAuth.onclick = () => {
     isSignUpMode = !isSignUpMode;
-    document.querySelector("#authModal h2").innerText = isSignUpMode ? "Регистрация" : "Вход в систему";
+    document.querySelector("#modalTitle").innerText = isSignUpMode ? "Регистрация" : "Вход в систему";
     els.authBtn.innerText = isSignUpMode ? "Создать аккаунт" : "Продолжить";
     els.toggleAuth.innerText = isSignUpMode ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Создать";
 };
@@ -76,7 +85,6 @@ els.toggleAuth.onclick = () => {
 els.authBtn.onclick = async () => {
     const email = document.getElementById("authEmail").value;
     const password = document.getElementById("authPassword").value;
-    
     if (!email || !password) return alert("Заполните все поля");
 
     try {
@@ -85,10 +93,8 @@ els.authBtn.onclick = async () => {
             : await sb.auth.signInWithPassword({ email, password });
 
         if (error) throw error;
-        
         els.authModal.style.display = "none";
         if (isSignUpMode) alert("Аккаунт создан! Теперь можно войти.");
-        
     } catch (err) {
         alert("Ошибка: " + err.message);
     }
@@ -96,26 +102,26 @@ els.authBtn.onclick = async () => {
 
 els.logoutBtn.onclick = async () => {
     await sb.auth.signOut();
-    window.location.reload(); // Перезагружаем страницу для очистки
+    window.location.reload();
 };
 
-// Проверка статуса пользователя
 sb.auth.onAuthStateChange((event, session) => {
     if (session) {
         els.userEmail.innerText = session.user.email;
         els.loginBtn.style.display = "none";
         els.logoutBtn.style.display = "inline-block";
-        document.querySelector(".placeholder-text").style.display = "none";
-        loadChats(); // Загружаем чаты при входе
+        loadChats();
+        if(!currentChatId) showWelcome();
     } else {
         els.userEmail.innerText = "Гость";
         els.loginBtn.style.display = "inline-block";
         els.logoutBtn.style.display = "none";
-        els.chatList.innerHTML = '<div class="placeholder-text">Войдите для сохранения истории</div>';
+        els.chatList.innerHTML = '<div style="padding:10px; opacity:0.5; font-size:12px;">Войдите для сохранения истории</div>';
+        showWelcome();
     }
 });
 
-// --- 3. ЧАТЫ И СООБЩЕНИЯ ---
+// --- ЧАТЫ (Загрузка, Создание, Удаление, Переименование) ---
 
 async function loadChats() {
     const { data: { user } } = await sb.auth.getUser();
@@ -128,45 +134,70 @@ async function loadChats() {
         data.forEach(chat => {
             const div = document.createElement("div");
             div.className = `chat-item ${currentChatId === chat.id ? 'active' : ''}`;
-            div.innerText = chat.title || "Новый чат";
-            div.onclick = () => openChat(chat.id);
+            
+            // HTML для элемента списка с кнопками
+            div.innerHTML = `
+                <span class="chat-title" onclick="openChat('${chat.id}')">${chat.title || "Новый чат"}</span>
+                <div class="chat-actions">
+                    <button class="action-btn" onclick="renameChat('${chat.id}', '${chat.title}')">✏️</button>
+                    <button class="action-btn delete" onclick="deleteChat('${chat.id}')">🗑️</button>
+                </div>
+            `;
             els.chatList.appendChild(div);
         });
     } else {
-        els.chatList.innerHTML = '<div class="placeholder-text">История пуста</div>';
+        els.chatList.innerHTML = '<div style="padding:10px; opacity:0.5; font-size:12px;">Нет истории</div>';
     }
 }
+
+// Удаление чата
+window.deleteChat = async (id) => {
+    if(!confirm("Удалить этот чат?")) return;
+    await sb.from('chats').delete().eq('id', id);
+    if(currentChatId === id) {
+        currentChatId = null;
+        showWelcome();
+    }
+    loadChats();
+};
+
+// Переименование чата
+window.renameChat = async (id, oldTitle) => {
+    const newTitle = prompt("Новое название:", oldTitle);
+    if(newTitle && newTitle !== oldTitle) {
+        await sb.from('chats').update({ title: newTitle }).eq('id', id);
+        loadChats();
+    }
+};
+
+// Открытие чата (глобальная функция для вызова из HTML)
+window.openChat = async (chatId) => {
+    currentChatId = chatId;
+    els.chatArea.innerHTML = ""; 
+    loadChats(); 
+
+    const { data } = await sb.from('messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: true });
+    
+    if (data && data.length > 0) {
+        data.forEach(msg => appendMessage(msg.role, msg.content, msg.role === 'bot' ? [] : false, false));
+    } else {
+        showWelcome();
+    }
+    
+    if (window.innerWidth < 768) toggleMenu();
+};
 
 els.newChatBtn.onclick = async () => {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return alert("Сначала войдите в аккаунт");
-
-    // Создаем новый чат в базе
-    const { data, error } = await sb.from('chats').insert([{ user_id: user.id, title: 'Новый диалог' }]).select();
     
-    if (error) return alert("Ошибка создания чата");
-    
-    if (data) {
-        openChat(data[0].id);
-        loadChats(); // Обновляем список
-    }
+    // Сбрасываем текущий ID и показываем приветствие
+    currentChatId = null;
+    loadChats(); // Убираем выделение старого чата
+    showWelcome();
 };
 
-async function openChat(chatId) {
-    currentChatId = chatId;
-    els.chatArea.innerHTML = ""; // Очищаем экран
-    loadChats(); // Чтобы обновить подсветку активного чата
-
-    // Загружаем сообщения
-    const { data } = await sb.from('messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: true });
-    
-    if (data) {
-        data.forEach(msg => appendMessage(msg.role, msg.content, false));
-    }
-    
-    // На мобильном закрываем меню
-    if (window.innerWidth < 768) toggleMenu();
-}
+// --- ОТПРАВКА СООБЩЕНИЙ ---
 
 async function sendMessage() {
     const text = els.input.value.trim();
@@ -175,12 +206,22 @@ async function sendMessage() {
     els.input.value = "";
     els.input.style.height = "auto";
     
-    // Если чат не выбран, создаем новый (если пользователь залогинен)
+    // Очищаем приветствие при первом сообщении
+    if (!currentChatId && els.chatArea.querySelector('.welcome-container')) {
+        els.chatArea.innerHTML = "";
+    } else if (currentChatId) {
+        const hasWelcome = els.chatArea.querySelector('.welcome-container');
+        if(hasWelcome) els.chatArea.innerHTML = "";
+    }
+
+    // Если чата нет, создаем его
     const { data: { user } } = await sb.auth.getUser();
     if (user && !currentChatId) {
         const { data } = await sb.from('chats').insert([{ user_id: user.id, title: text.substring(0, 20) + '...' }]).select();
-        if (data) currentChatId = data[0].id;
-        loadChats();
+        if (data) {
+            currentChatId = data[0].id;
+            loadChats();
+        }
     }
 
     appendMessage('user', text);
@@ -199,7 +240,6 @@ async function sendMessage() {
         }
 
         appendMessage('bot', replyText, sources);
-        
     } catch (e) {
         appendMessage('bot', "Ошибка соединения с сервером.");
     } finally {
@@ -207,32 +247,20 @@ async function sendMessage() {
     }
 }
 
-// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
-
-function appendMessage(role, text, sources = []) {
+function appendMessage(role, text, sources = [], save = true) {
     const div = document.createElement("div");
     div.className = `msg ${role}`;
-    
-    // Преобразуем текст (жирный шрифт, переносы)
     let html = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
     
-    // Если есть источники (только для бота)
-    if (role === 'bot' && sources.length > 0) {
-        const uniqueSources = [...new Map(sources.map(item => [item['url'], item])).values()];
-        let sourcesHtml = `<div class="sources">Sources: `;
-        uniqueSources.forEach(s => {
-            sourcesHtml += `<a href="${s.url}" target="_blank">${s.name}</a>`;
-        });
-        sourcesHtml += `</div>`;
-        html += sourcesHtml;
+    if (role === 'bot' && sources && sources.length > 0) {
+        const unique = [...new Map(sources.map(item => [item['url'], item])).values()];
+        html += `<div class="sources">Sources: ` + unique.map(s => `<a href="${s.url}" target="_blank">${s.name}</a>`).join('') + `</div>`;
     }
-
     div.innerHTML = html;
     els.chatArea.appendChild(div);
     els.chatArea.scrollTop = els.chatArea.scrollHeight;
 
-    // Сохраняем в базу, если есть ID чата и это новое сообщение
-    if (currentChatId && sources !== false) { // sources=false используется как флаг "не сохранять при загрузке"
+    if (save && currentChatId) {
         sb.from('messages').insert([{ chat_id: currentChatId, role, content: text }]).then();
     }
 }
