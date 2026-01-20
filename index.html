@@ -26,8 +26,7 @@
     <div class="chat-list-container">
       <div class="list-header">ИСТОРИЯ</div>
       <div id="chatList" class="chat-list">
-        <div class="placeholder-text">Войдите, чтобы видеть историю</div>
-      </div>
+        </div>
     </div>
 
     <div class="sidebar-footer">
@@ -47,7 +46,8 @@
   <main class="main-content">
     
     <header class="topbar">
-      <button id="menuBtn" class="icon-btn">☰</button>
+      <button id="menuBtn" class="menu-btn-main">☰</button>
+      
       <div class="status-indicator">
         <span id="statusDot" class="status-dot online"></span>
         <span id="statusText" class="status-text">Система: Онлайн</span>
@@ -55,18 +55,14 @@
     </header>
 
     <div id="chat" class="chat-area">
-      <div class="welcome-message">
-        <h1>Привет! Я ARTIX.</h1>
-        <p>Чем могу помочь сегодня?</p>
       </div>
-    </div>
 
     <div class="composer-area">
       <div class="input-container">
         <textarea id="input" rows="1" placeholder="Отправь сообщение..."></textarea>
         <button id="sendBtn" class="send-btn">➤</button>
       </div>
-      <div class="model-info">Работает на модели ARTIX-1</div>
+      <div class="model-info">ARTIX-1 Model</div>
     </div>
 
   </main>
@@ -74,7 +70,7 @@
   <div id="authModal" class="modal">
     <div class="modal-box">
       <span class="close-modal" id="closeModal">✕</span>
-      <h2>Вход в систему</h2>
+      <h2 id="modalTitle">Вход в систему</h2>
       <input type="email" id="authEmail" placeholder="Email" class="modal-input">
       <input type="password" id="authPassword" placeholder="Пароль" class="modal-input">
       <button id="authBtn" class="btn full-btn">Продолжить</button>
