@@ -25,37 +25,35 @@
 
     <div class="chat-list-container">
       <div class="list-header">ИСТОРИЯ</div>
-      <div id="chatList" class="chat-list">
-        </div>
+      <div id="chatList" class="chat-list"></div>
     </div>
 
     <div class="sidebar-footer">
       <div id="userSection" class="user-profile">
         <div class="user-info">
-          <div class="avatar">👤</div>
-          <span id="userEmail" class="email">Гость</span>
+          <div id="userAvatar" class="avatar">👤</div>
+          <div class="user-details">
+            <span id="userEmail" class="email">Гость</span>
+            <span class="settings-hint">Настройки профиля</span>
+          </div>
         </div>
         <div class="auth-buttons">
           <button id="loginBtn" class="btn small-btn">Войти</button>
-          <button id="logoutBtn" class="btn small-btn" style="display: none;">Выйти</button>
         </div>
       </div>
     </div>
   </aside>
 
   <main class="main-content">
-    
     <header class="topbar">
       <button id="menuBtn" class="menu-btn-main">☰</button>
-      
       <div class="status-indicator">
         <span id="statusDot" class="status-dot online"></span>
         <span id="statusText" class="status-text">Система: Онлайн</span>
       </div>
     </header>
 
-    <div id="chat" class="chat-area">
-      </div>
+    <div id="chat" class="chat-area"></div>
 
     <div class="composer-area">
       <div class="input-container">
@@ -64,12 +62,11 @@
       </div>
       <div class="model-info">ARTIX-1 Model</div>
     </div>
-
   </main>
 
   <div id="authModal" class="modal">
     <div class="modal-box">
-      <span class="close-modal" id="closeModal">✕</span>
+      <span class="close-modal" id="closeAuthModal">✕</span>
       <h2 id="modalTitle">Вход в систему</h2>
       <input type="email" id="authEmail" placeholder="Email" class="modal-input">
       <input type="password" id="authPassword" placeholder="Пароль" class="modal-input">
@@ -78,8 +75,30 @@
     </div>
   </div>
 
-  <div id="overlay" class="overlay"></div>
+  <div id="profileModal" class="modal">
+    <div class="modal-box">
+      <span class="close-modal" id="closeProfileModal">✕</span>
+      <h2>Настройки профиля</h2>
+      
+      <div class="profile-upload-section">
+        <div id="profilePreview" class="avatar-large">👤</div>
+        <label for="avatarInput" class="btn small-btn upload-btn">Загрузить фото</label>
+        <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+      </div>
 
+      <div class="profile-field">
+        <label>Сменить пароль</label>
+        <input type="password" id="newPassword" placeholder="Новый пароль" class="modal-input">
+        <button id="savePasswordBtn" class="btn full-btn ghost">Обновить пароль</button>
+      </div>
+
+      <div class="divider"></div>
+      
+      <button id="logoutBtn" class="btn full-btn danger">Выйти из аккаунта</button>
+    </div>
+  </div>
+
+  <div id="overlay" class="overlay"></div>
   <script src="./app.js"></script>
 </body>
 </html>
