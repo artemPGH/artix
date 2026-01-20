@@ -1,6 +1,6 @@
 // --- НАСТРОЙКИ ---
 const SUPABASE_URL = "https://ptetkaidxtignrlhrbpj.supabase.co";
-const SUPABASE_KEY = "sb_publishable_Y5HdMr6bd9FZKJXk-bK0vw_JPVOLigb";
+const SUPABASE_KEY = "sb_publishable_Y5HdMr6bD9FZKJXk-bK0vw_JPV0Ligb";
 const SEARCH_API = "https://artix-search.facts-com99.workers.dev/api/search";
 
 const { createClient } = window.supabase;
