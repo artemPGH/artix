@@ -247,7 +247,7 @@ function setStatus(state) {
 
 // 🔥🔥🔥 НАЧАЛО БЛОКА: ТАЙМЕР РЕЛИЗА (УДАЛИТЬ ПОТОМ) 🔥🔥🔥
 // Просто удали все ниже этой линии, когда наступит релиз
-const RELEASE_DATE = new Date("Jan 21, 2026 20:45:00").getTime();
+const RELEASE_DATE = new Date("Jan 31, 2026 14:00:00").getTime();
 const timerEl = { overlay: document.getElementById("releaseOverlay"), days: document.getElementById("days"), hours: document.getElementById("hours"), minutes: document.getElementById("minutes"), seconds: document.getElementById("seconds"), canvas: document.getElementById("confettiCanvas") };
 
 function updateTimer() {
