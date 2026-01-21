@@ -79,26 +79,36 @@
     <div class="modal-box">
       <span class="close-modal" id="closeProfileModal">✕</span>
       <h2>Настройки профиля</h2>
-      
       <div class="profile-upload-section">
         <div id="profilePreview" class="avatar-large">👤</div>
         <label for="avatarInput" class="btn small-btn upload-btn">Загрузить фото</label>
         <input type="file" id="avatarInput" accept="image/*" style="display: none;">
       </div>
-
       <div class="profile-field">
         <label>Сменить пароль</label>
         <input type="password" id="newPassword" placeholder="Новый пароль" class="modal-input">
         <button id="savePasswordBtn" class="btn full-btn ghost">Обновить пароль</button>
       </div>
-
       <div class="divider"></div>
-      
       <button id="logoutBtn" class="btn full-btn danger">Выйти из аккаунта</button>
     </div>
   </div>
 
   <div id="overlay" class="overlay"></div>
+
+  <div id="releaseOverlay" class="release-overlay">
+    <div class="timer-container">
+      <h1 class="timer-title">ARTIX RELEASE</h1>
+      <div id="countdown" class="countdown">
+        <div class="time-box"><span id="days">00</span><p>Дней</p></div>
+        <div class="time-box"><span id="hours">00</span><p>Часов</p></div>
+        <div class="time-box"><span id="minutes">00</span><p>Минут</p></div>
+        <div class="time-box"><span id="seconds">00</span><p>Секунд</p></div>
+      </div>
+      <p class="timer-subtitle">Доступ откроется 31 Января</p>
+    </div>
+  </div>
+  <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
   <script src="./app.js"></script>
 </body>
 </html>
