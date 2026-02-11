@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>ARTIX</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="stylesheet" href="./styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
@@ -16,8 +17,7 @@
         <img src="./assets/artix-logo.png" alt="Logo" class="brand-logo">
         <span class="brand-name">ARTIX</span>
       </div>
-      <button id="closeSidebarBtn" class="icon-btn mobile-only">✕</button>
-    </div>
+      </div>
 
     <button id="newChatBtn" class="btn new-chat-btn">
       <span>+</span> Новый чат
@@ -31,7 +31,9 @@
     <div class="sidebar-footer">
       <div id="userSection" class="user-profile">
         <div class="user-info">
-          <div id="userAvatar" class="avatar">👤</div>
+          <div id="userAvatar" class="avatar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
           <div class="user-details">
             <span id="userEmail" class="email">Гость</span>
             <span class="settings-hint">Настройки профиля</span>
@@ -46,21 +48,37 @@
 
   <main class="main-content">
     <header class="topbar">
-      <button id="menuBtn" class="menu-btn-main">☰</button>
+      <div class="topbar-left">
+        <button id="menuBtn" class="menu-btn-main">☰</button>
+        <div class="model-selector-wrapper">
+          <select id="modelSelect" class="model-select-btn">
+            <option value="artix-1">ARTIX 1</option>
+            <option value="artix-1.2">ARTIX 1.2</option>
+          </select>
+        </div>
+      </div>
       <div class="status-indicator">
         <span id="statusDot" class="status-dot online"></span>
         <span id="statusText" class="status-text">Система: Онлайн</span>
       </div>
     </header>
 
-    <div id="chat" class="chat-area"></div>
+    <div id="chat" class="chat-area">
+      <div class="welcome-container">
+        <img src="./assets/artix-logo.png" alt="Logo" class="welcome-logo">
+        <h1>Привет! Я ARTIX.</h1>
+        <p>Готов помочь с поиском, кодом и идеями.</p>
+      </div>
+    </div>
 
     <div class="composer-area">
       <div class="input-container">
         <textarea id="input" rows="1" placeholder="Отправь сообщение..."></textarea>
         <button id="sendBtn" class="send-btn">➤</button>
       </div>
-      <div class="model-info">ARTIX-1 Model</div>
+      <div class="disclaimer">
+        ARTIX не человек и может ошибаться. Его ответы нужно проверять.
+      </div>
     </div>
   </main>
 
@@ -79,16 +97,20 @@
     <div class="modal-box">
       <span class="close-modal" id="closeProfileModal">✕</span>
       <h2>Настройки профиля</h2>
+      
       <div class="profile-upload-section">
-        <div id="profilePreview" class="avatar-large">👤</div>
-        <label for="avatarInput" class="btn small-btn upload-btn">Загрузить фото</label>
+        <div id="profilePreview" class="avatar-large">
+             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
+        <label for="avatarInput" class="btn small-btn upload-btn" style="margin-top: 15px; display:inline-block;">Загрузить фото</label>
         <input type="file" id="avatarInput" accept="image/*" style="display: none;">
       </div>
-      <div class="profile-field">
-        <label>Сменить пароль</label>
+
+      <div class="profile-field" style="margin-top: 20px;">
         <input type="password" id="newPassword" placeholder="Новый пароль" class="modal-input">
         <button id="savePasswordBtn" class="btn full-btn ghost">Обновить пароль</button>
       </div>
+      
       <div class="divider"></div>
       <button id="logoutBtn" class="btn full-btn danger">Выйти из аккаунта</button>
     </div>
@@ -96,19 +118,6 @@
 
   <div id="overlay" class="overlay"></div>
 
-  <div id="releaseOverlay" class="release-overlay">
-    <div class="timer-container">
-      <h1 class="timer-title">ARTIX RELEASE</h1>
-      <div id="countdown" class="countdown">
-        <div class="time-box"><span id="days">00</span><p>Дней</p></div>
-        <div class="time-box"><span id="hours">00</span><p>Часов</p></div>
-        <div class="time-box"><span id="minutes">00</span><p>Минут</p></div>
-        <div class="time-box"><span id="seconds">00</span><p>Секунд</p></div>
-      </div>
-      <p class="timer-subtitle">Доступ откроется 31 Января</p>
-    </div>
-  </div>
-  <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
   <script src="./app.js"></script>
 </body>
 </html>
