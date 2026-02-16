@@ -49,7 +49,6 @@ const els = {
 };
 
 // --- БЕЗОПАСНЫЕ ОБРАБОТЧИКИ СОБЫТИЙ ---
-// (Теперь сайт не сломается, если какой-то кнопки нет в HTML)
 
 if (els.menuBtn) {
     els.menuBtn.onclick = () => {
@@ -133,18 +132,50 @@ async function loadChats() {
 }
 
 // Глобальные функции (для onclick в HTML)
-window.openChat = (id, title) => {
+window.openChat = async (id, title) => { // ИЗМЕНЕНО: теперь функция async
     currentChatId = id;
+    
     if (els.chatArea) {
         els.chatArea.innerHTML = '';
-        appendMessage('bot', `**Чат: ${title}**\n\n_История загружена._`);
+        appendMessage('bot', `_Загрузка истории..._`); // Временный текст пока идет загрузка
     }
-    loadChats();
     
     if (window.innerWidth <= 768) {
         if (els.sidebar) els.sidebar.classList.remove("open");
         if (els.overlay) els.overlay.classList.remove("active");
     }
+
+    // НОВАЯ ЛОГИКА: Скачиваем сообщения из Supabase
+    if (currentUser) {
+        try {
+            const { data: messages, error } = await sb
+                .from('messages')
+                .select('*')
+                .eq('chat_id', id)
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+
+            if (els.chatArea) {
+                els.chatArea.innerHTML = ''; // Убираем текст "Загрузка истории..."
+                if (messages && messages.length > 0) {
+                    messages.forEach(msg => {
+                        appendMessage(msg.role, msg.content);
+                    });
+                } else {
+                    appendMessage('bot', `_В этом чате пока нет сообщений._`);
+                }
+            }
+        } catch (err) {
+            console.error("Ошибка загрузки истории:", err);
+            if (els.chatArea) {
+                els.chatArea.innerHTML = '';
+                appendMessage('bot', `⚠ **Ошибка:** Не удалось загрузить историю.`);
+            }
+        }
+    }
+
+    loadChats(); // Обновляем выделение кнопки в меню
 };
 
 window.deleteChat = async (id, event) => {
@@ -177,7 +208,6 @@ async function sendMessage() {
     const text = els.input.value.trim();
     if (!text) return;
 
-    // Защита: если селектора нет, используем artix-1 по умолчанию
     const selectedModel = els.modelSelect ? els.modelSelect.value : "artix-1";
 
     if (currentUser && !currentChatId) {
@@ -201,9 +231,16 @@ async function sendMessage() {
     appendMessage('user', text);
     setStatus('thinking');
 
+    // НОВАЯ ЛОГИКА: Сохраняем вопрос пользователя в базу
+    if (currentUser && currentChatId) {
+        sb.from('messages').insert([{ chat_id: currentChatId, role: 'user', content: text }]).then(({error}) => {
+            if (error) console.error("Ошибка сохранения вопроса:", error);
+        });
+    }
+
     try {
         const url = `${SEARCH_API}?q=${encodeURIComponent(text)}&model=${selectedModel}`;
-        console.log("Запрос:", url); // Для отладки в F12
+        console.log("Запрос:", url); 
 
         const res = await fetch(url);
         
@@ -217,6 +254,14 @@ async function sendMessage() {
             
         setStatus('online');
         typeWriter(reply);
+
+        // НОВАЯ ЛОГИКА: Сохраняем ответ ARTIX в базу
+        if (currentUser && currentChatId) {
+            sb.from('messages').insert([{ chat_id: currentChatId, role: 'bot', content: reply }]).then(({error}) => {
+                if (error) console.error("Ошибка сохранения ответа:", error);
+            });
+        }
+
     } catch (e) {
         setStatus('online');
         console.error(e);
@@ -228,7 +273,6 @@ function appendMessage(role, text) {
     if (!els.chatArea) return;
     const div = document.createElement("div");
     div.className = `msg ${role}`;
-    // Проверка: подключен ли marked? Если нет, просто выводим текст
     div.innerHTML = (role === 'bot' && typeof marked !== 'undefined') ? marked.parse(text) : text;
     els.chatArea.appendChild(div);
     els.chatArea.scrollTop = els.chatArea.scrollHeight;
@@ -241,12 +285,10 @@ function typeWriter(text) {
     els.chatArea.appendChild(div);
     let i = 0;
     
-    // Проверка markdown один раз перед циклом
     const useMarked = (typeof marked !== 'undefined');
 
     function type() {
         if (i < text.length) {
-            // Если marked есть - парсим кусочек, если нет - просто текст
             const content = text.substring(0, i + 1);
             div.innerHTML = useMarked ? marked.parse(content) : content;
             
@@ -267,7 +309,6 @@ function setStatus(state) {
 
 if (els.userSection) {
     els.userSection.onclick = (e) => {
-        // Проверяем клик по кнопке входа (или внутри неё)
         if (e.target.closest('#loginBtn') || e.target.id === 'loginBtn') {
             if (els.authModal) els.authModal.style.display = "block";
             return;
@@ -316,7 +357,6 @@ if (els.logoutBtn) {
 
 // --- АВАТАР ---
 function updateAvatarPreview(url) {
-    // Безопасные заглушки (SVG)
     const smallSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
     const bigSvg = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
 
